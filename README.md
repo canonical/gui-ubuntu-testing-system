@@ -1,2 +1,5 @@
 # ubuntu-gui-testing-infra
-infrastructure to run tests defined in ubuntu-gui-testing
+Infrastructure to run tests defined in [ubuntu-gui-testing](https://github.com/canonical/ubuntu-gui-testing).
+
+WIP!
+
