@@ -1,4 +1,4 @@
-# ubuntu-gui-testing-infra
+# gui-ubuntu-testing-system (GUTS)
 Infrastructure to run tests defined in [ubuntu-gui-testing](https://github.com/canonical/ubuntu-gui-testing).
 
 WIP!
