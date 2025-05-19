@@ -23,6 +23,9 @@ import (
 //     "release": $series,
 //     "execution_stage": (pending/proposed/beta),
 // }
+type request struct {
+  family    string    `json: "id"`
+}
 
 
 // albums slice to seed record album data.
