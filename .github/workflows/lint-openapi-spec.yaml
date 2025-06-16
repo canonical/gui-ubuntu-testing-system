@@ -1,0 +1,36 @@
+name: Lint-openapi-spec
+
+on:
+  workflow_call:
+
+jobs:
+  lint-openapi-spec:
+    name: Lint-openapi-spec
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+
+      - name: Run linters
+        run: |
+          cd openapi-spec/
+          make lint
+
+      - name: Run formatters
+        run: |
+          cd openapi-spec/
+          sudo snap install yq
+          make format
+
+      - name: Check for modifications to generated files
+        run: |
+          cd openapi-spec/
+          if [[ -n "$(git status -s)" ]]; then
+            echo "Please run 'make format' then commit/push changes"
+            echo
+            git diff
+            exit 1
+          fi

@@ -1,0 +1,300 @@
+openapi: 3.1.0
+info:
+  title: "GUTS Api Spec"
+  summary: Specification of API endpoints for GUTS (gui-ubuntu-testing-system)
+  description: |
+    This specification represents the design of the API for GUTS, a REST api.
+
+    GUTS stands for gui-ubuntu-testing-system. It is an infrastructure which
+    takes test requests, runs tests, and stores test results. The tests in question
+    are graphical tests run on QEMU VMs using yarf.
+
+    For more about yarf, see: https://github.com/canonical/yarf
+  # termsOfService: http://swagger.io/terms/
+  contact:
+    email: tim.andersson@canonical.com
+  license:
+    name: AGPL 3.0
+    url: https://www.gnu.org/licenses/agpl-3.0.en.html
+  version: "1.0"
+servers:
+  - url: https://localhost:17777/api/v1
+tags:
+  - name: request
+    description: |
+      Pass details about a test plan and request for it to be run.
+      The api will validate all input parameters and return a status code,
+      as well as a url to track the status of the job, if accepted.
+  - name: job
+    description: Everything pertaining to job.
+  - name: artifacts
+    description: |
+      Download all associated artifacts from a job as a tar.gz.
+# x
+paths:
+  /artifacts/{uuid}:
+    get:
+      tags:
+        - artifacts
+      summary: Download artifacts from a job.
+      description: |
+        Download all associated artifacts from a job as a tar.gz.
+      operationId: Artifacts
+      parameters:
+        - $ref: "#/components/parameters/Uuid"
+      responses:
+        "200":
+          $ref: "#/components/responses/Artifacts"
+        "404":
+          $ref: "#/components/responses/JobNotFound"
+  /job/{uuid}:
+    get:
+      tags:
+        - job
+      summary: Track status and info of a job.
+      description: |
+        Track status and all information about a job with a given UUID.
+      operationId: Job
+      parameters:
+        - $ref: "#/components/parameters/Uuid"
+      responses:
+        "200":
+          $ref: "#/components/responses/Job"
+        "404":
+          $ref: "#/components/responses/JobNotFound"
+  /request:
+    post:
+      tags:
+        - request
+      summary: Pass input parameters and request a plan of tests to be run.
+      description: |
+        Pass details about a test plan and request for it to be run.
+        The api will validate all input parameters and return a status code,
+        as well as a url to track the status of the job, if accepted.
+      operationId: jobRequest
+      parameters:
+        - $ref: "#/components/parameters/TestArtifactUrl"
+        - $ref: "#/components/parameters/TestsRepo"
+        - $ref: "#/components/parameters/TestsPlans"
+        - $ref: "#/components/parameters/TestBed"
+        - $ref: "#/components/parameters/Debug"
+        - $ref: "#/components/parameters/Priority"
+      responses:
+        "201":
+          $ref: "#/components/responses/RequestSuccess"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "405":
+          $ref: "#/components/responses/BadMethod"
+        "415":
+          $ref: "#/components/responses/UnsupportedMediaType"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+components:
+  # x
+  parameters:
+    Debug:
+      in: query
+      name: debug
+      required: false
+      schema:
+        type: boolean
+        description: Enable debug artifacts.
+    Priority:
+      in: query
+      name: priority
+      required: false
+      schema:
+        type: integer
+        description: |
+          Priority of test request. Jobs with higher priority get processed before jobs with lower priority.
+          Requesters have assigned maximum priority levels. A request with a priority level higher than the requesters
+          assigned maximum priority level are demoted to said level.
+    TestArtifactUrl:
+      in: query
+      name: test_artifact_url
+      required: false
+      schema:
+        type: string
+        format: uri
+      description: |
+        URL to artifact to be tested. Can be a deb, snap, or nothing if you
+        just want to run tests against the testbed. Artifact types supported are:
+          - debs
+          - snaps
+    TestBed:
+      in: query
+      name: testbed
+      required: true
+      schema:
+        type: string
+        description: |
+          Url to image to be used as testbed.
+          Has to be either .iso or .img format.
+          Can also be a shortform, e.g. ubuntu:questing:daily,
+          which'll expand to an appropriate url for official Ubuntu images.
+    TestsPlans:
+      in: query
+      name: tests_plans
+      required: true
+      schema:
+        type: array
+        items:
+          $ref: "#/components/schemas/TestPlanPath"
+        description: |
+          List of paths to plan.yaml files detailing test plans.
+    TestsRepo:
+      in: query
+      name: tests_repo
+      required: true
+      schema:
+        type: string
+        description: |
+          Url to git repository containing tests and test plans.
+    Uuid:
+      in: path
+      name: uuid
+      required: true
+      schema:
+        type: string
+        description: UUID to identify job.
+  schemas:
+    Artifacts:
+      description: .tar.gz file containing all test artifacts
+    Job:
+      type: object
+      description: Information about a given job
+      properties:
+        artifacts_url:
+          type: string
+          format: uri
+          examples:
+            - https://launchpad.net/ubuntu/+archive/primary/+files/hello_2.10-5_amd64.deb
+          description: |
+            URL to artifact to be tested. Can be a deb, snap, or nothing if you
+            just want to run tests against the testbed.
+        tests_repo:
+          type: string
+          examples:
+            - https://github.com/canonical/ubuntu-gui-testing
+          description: |
+            Url to git repository containing tests and test plans.
+        test_plans:
+          type: array
+          description: |
+            List of paths to plan.yaml files detailing test plans.
+          items:
+            $ref: "#/components/schemas/TestPlanPath"
+        image_url:
+          type: string
+          format: uri
+          description: |
+            Url to image to be used as testbed.
+            Has to be either .iso or .img format.
+        uuid:
+          type: string
+          description: UUID to identify job.
+        test_observer_test_id:
+          type: integer
+          description: |
+            ID for test observer suite of tests, that corresponds with this jobs'
+            UUID.
+        status:
+          type: string
+          enum: [pending, running, pass, fail]
+        submitted_at:
+          type: string
+          format: date-time
+        requester:
+          type: string
+        debug:
+          type: boolean
+        priority:
+          type: integer
+      additionalProperties: false
+    TestPlanPath:
+      type: string
+      description: Path to a plan.yaml in a given repository
+      examples:
+        - tests/firefox-example/plans/extended.yaml
+  # x
+  responses:
+    Artifacts:
+      description: Tarball of all artifacts from a job.
+      content:
+        application/x-gzip:
+          schema:
+            $ref: "#/components/schemas/Artifacts"
+    BadMethod:
+      description: Returned when the requester tries a method other than POST.
+      content:
+        text/plain:
+          schema:
+            type: string
+    BadRequest:
+      description: Returned when input fields are incorrect.
+      content:
+        text/plain:
+          schema:
+            type: string
+    InternalServerError:
+      description: Internal server error
+      content:
+        text/plain:
+          schema:
+            type: string
+    Job:
+      description: JSON detailing all information about a job
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Job"
+    JobNotFound:
+      description: Message stating a job doesn't exist.
+      content:
+        text/plain:
+          schema:
+            type: string
+    NotFound:
+      description: Returned when the tests repo, test plans, or image url doesn't exist.
+      content:
+        text/plain:
+          schema:
+            type: string
+    RequestSuccess:
+      description: JSON returned after successful test request
+      content:
+        application/json:
+          schema:
+            properties:
+              uuid:
+                type: string
+                description: UUID to identify a job.
+              job_url:
+                type: string
+                format: uri
+                description: URL to track the status of a job.
+                examples:
+                  - https://guts.ubuntu.com/job/8d898296-e373-4947-8435-bf75316943f4
+      headers:
+        Location:
+          schema:
+            type: string
+            format: uri
+          description: The status url for the job
+    Unauthorized:
+      description: Returned when the requester doesn't have privileges to request a test.
+      content:
+        text/plain:
+          schema:
+            type: string
+    UnsupportedMediaType:
+      description: Returned when the requester requests a test with an unsupported image type.
+      content:
+        text/plain:
+          schema:
+            type: string
