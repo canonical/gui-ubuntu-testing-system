@@ -95,7 +95,6 @@ paths:
         "500":
           $ref: "#/components/responses/InternalServerError"
 components:
-  # x
   parameters:
     Debug:
       in: query
