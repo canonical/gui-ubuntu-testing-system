@@ -75,6 +75,7 @@ paths:
       parameters:
         - $ref: "#/components/parameters/TestArtifactUrl"
         - $ref: "#/components/parameters/TestsRepo"
+        - $ref: "#/components/parameters/TestsRepoBranch"
         - $ref: "#/components/parameters/TestsPlans"
         - $ref: "#/components/parameters/TestBed"
         - $ref: "#/components/parameters/Debug"
@@ -149,11 +150,21 @@ components:
     TestsRepo:
       in: query
       name: tests_repo
-      required: true
+      required: false
       schema:
         type: string
         description: |
           Url to git repository containing tests and test plans.
+        default: https://github.com/canonical/ubuntu-gui-testing
+    TestsRepoBranch:
+      in: query
+      name: tests_repo_branch
+      required: false
+      schema:
+        type: string
+        description: |
+          Branch of test_repo to use.
+        default: main
     Uuid:
       in: path
       name: uuid
