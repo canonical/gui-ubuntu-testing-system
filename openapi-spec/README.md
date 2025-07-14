@@ -1,3 +1,5 @@
+<!-- markdownlint-disable MD013 -->
+
 # Open API Spec
 
 Assuming you have a working NodeJS and Python environment set up:
@@ -13,5 +15,4 @@ make format
 make mock
 ```
 
-You can now see the newly designed spec at http://localhost:8080/ and the generated spec at
-http://localhost:8080/generated
+You can now see the newly designed spec at [localhost:8080](http://localhost:8080/) and the generated spec at [localhost:8080/generated](http://localhost:8080/generated).
