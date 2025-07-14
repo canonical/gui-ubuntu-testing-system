@@ -6,3 +6,5 @@ on:
 jobs:
   lint-openapi-spec:
     uses: ./.github/workflows/lint-openapi-spec.yaml
+  mdlint:
+    uses: ./.github/workflows/mdlint.yaml
