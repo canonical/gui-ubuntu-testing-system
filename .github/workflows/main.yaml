@@ -10,3 +10,7 @@ jobs:
     uses: ./.github/workflows/lint-openapi-spec.yaml
   mdlint:
     uses: ./.github/workflows/mdlint.yaml
+  sqllint:
+    uses: ./.github/workflows/lint-sql-files.yaml
+  apply-schemas:
+    uses: ./.github/workflows/test-sql-schema.yaml

@@ -14,5 +14,40 @@ jobs:
         run: |
           #!/bin/bash
           set -ex
+          sudo sh -c 'echo "local   all             all                                trust\n" | tee /etc/postgresql/16/main/pg_hba.conf'
+          # start the db instance
           sudo systemctl start postgresql.service
+          # bootstrap the database
           ./postgres/scripts/bootstrap-db.sh local
+          # dump the database
+          sudo -i -u postgres pg_dump guts >> dbdump_i_0.sql
+          # re-run the bootstrap of the database
+          ./postgres/scripts/bootstrap-db.sh local
+          # dump the database again
+          sudo -i -u postgres pg_dump guts >> dbdump_i_1.sql
+          # compare the two dumps, ensure the second bootstrap
+          # run didn't change the database configuration
+          [[ $(sha256sum dbdump_i_0.sql | cut -d" " -f1) == $(sha256sum dbdump_i_1.sql | cut -d" " -f1) ]];
+      - name: Import test data into db
+        run: |
+          set -ex
+          # import test data
+          DATA_DIR=/var/lib/postgresql/data/
+          cd postgres/test-data
+          sed -i -e 's/\.\//\/var\/lib\/postgresql\/data\//g' ./test-data.sql
+          sudo mkdir -p $DATA_DIR
+          sudo cp -br ./ $DATA_DIR
+          sudo chown -R postgres:postgres $DATA_DIR
+          sudo su postgres
+          cd $DATA_DIR
+          ls
+          psql --user postgres -a -f ./test-data.sql
+          jobs_rows=$(psql --no-align --quiet --tuples-only --user postgres guts -c 'SELECT * FROM jobs;' | wc -l)
+          tests_rows=$(psql --no-align --quiet --tuples-only --user postgres guts -c 'SELECT * FROM tests;' | wc -l)
+          users_rows=$(psql --no-align --quiet --tuples-only --user postgres guts -c 'SELECT * FROM users;' | wc -l)
+          reporter_rows=$(psql --no-align --quiet --tuples-only --user postgres guts -c 'SELECT * FROM reporter;' | wc -l)
+          [[ "${jobs_rows}" == "60" ]] || exit 1
+          [[ "${tests_rows}" == "78" ]] || exit 1
+          [[ "${users_rows}" == "4" ]] || exit 1
+          [[ "${reporter_rows}" == "52" ]] || exit 1
+          
