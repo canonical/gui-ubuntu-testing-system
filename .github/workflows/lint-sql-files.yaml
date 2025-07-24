@@ -1,0 +1,16 @@
+name: lint-sql-files
+
+on:
+  workflow_call:
+
+jobs:
+  lint-sql:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: "actions/checkout@v2"
+      - uses: "actions/setup-python@v2"
+      - name: Install SQLFluff
+        run: "pip install sqlfluff"
+      - name: Lint models
+        run: "sqlfluff lint --dialect postgres"
+
