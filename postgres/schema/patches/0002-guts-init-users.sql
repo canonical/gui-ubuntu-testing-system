@@ -23,17 +23,22 @@ SELECT add_user_if_not_exists('guts_reporter', 'guts_reporter');
 -- create permissions
 
 -- api permissions
-GRANT INSERT ON jobs TO guts_api;
+GRANT SELECT, INSERT ON jobs TO guts_api;
+ALTER USER guts_api WITH LOGIN;
 
 -- spawner permissions
-GRANT UPDATE ON tests TO guts_spawner;
+GRANT SELECT, UPDATE ON tests TO guts_spawner;
+ALTER USER guts_spawner WITH LOGIN;
 
 -- scheduler permissions
-GRANT UPDATE ON jobs TO guts_scheduler;
-GRANT INSERT, UPDATE ON tests TO guts_scheduler;
+GRANT SELECT, UPDATE ON jobs TO guts_scheduler;
+GRANT SELECT, INSERT, UPDATE ON tests TO guts_scheduler;
+ALTER USER guts_scheduler WITH LOGIN;
 
 -- runner permissions
-GRANT UPDATE ON tests TO guts_runner;
+GRANT SELECT, UPDATE ON tests TO guts_runner;
+ALTER USER guts_runner WITH LOGIN;
 
 -- reporter permissions
-GRANT INSERT, UPDATE ON reporter TO guts_reporter; -- \n
+GRANT SELECT, INSERT, UPDATE ON reporter TO guts_reporter;
+ALTER USER guts_reporter WITH LOGIN; -- \n
