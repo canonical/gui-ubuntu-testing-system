@@ -77,3 +77,8 @@ d07b7979-940b-4144-9a43-31b801e41031,Multipass-Basic,127.0.0.1:5997,fail,https:/
 4bfebbd7-1c5d-4f63-a773-7c766bec7b2e,Multipass-Basic,127.0.0.1:5950,pass,https://guts.ubuntu.com/artifacts/4bfebbd7-1c5d-4f63-a773-7c766bec7b2e/,2025-07-23T14:17:14.634132
 849cdde6-75b5-4ff5-83e9-ed0aa17b1cca,Multipass-Basic,127.0.0.1:5990,fail,https://guts.ubuntu.com/artifacts/849cdde6-75b5-4ff5-83e9-ed0aa17b1cca/,2025-07-23T14:17:14.634158
 5f85ea67-3d3b-4a05-ac5b-37a6680305a7,Multipass-Basic,127.0.0.1:5985,fail,https://guts.ubuntu.com/artifacts/5f85ea67-3d3b-4a05-ac5b-37a6680305a7/,2025-07-23T14:17:14.634184
+27549483-e8f5-497f-a05d-e6d8e67a8e8a,Farnsworth-Basic-1,127.0.0.1:5985,pass,http://localhost:9999/res-1.tar.gz,2025-07-23T14:17:14.634184
+27549483-e8f5-497f-a05d-e6d8e67a8e8a,Farnsworth-Basic-2,127.0.0.1:5985,pass,http://localhost:9999/res-2.tar.gz,2025-07-23T14:17:14.634184
+27549483-e8f5-497f-a05d-e6d8e67a8e8a,Farnsworth-Basic-3,127.0.0.1:5985,pass,http://localhost:9999/res-3.tar.gz,2025-07-23T14:17:14.634184
+afd8adc0-1734-4566-8b26-47565c48c061,Farnsworth-Basic-1,127.0.0.1:5985,pass,http://localhost:9999/empty.tar.gz,2025-07-23T14:17:14.634184
+44eea936-1e4a-4e20-b25d-ab0df9978ada,Farnsworth-Basic-1,127.0.0.1:5985,pass,http://localhost:9999/corrupted.tar.gz,2025-07-23T14:17:14.634184
