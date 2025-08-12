@@ -1,0 +1,23 @@
+package main
+
+import (
+  "fmt"
+)
+
+
+type UuidNotFoundError struct {
+    uuid string
+}
+
+func (e UuidNotFoundError) Error() string {
+    return fmt.Sprintf("No jobs with uuid %v found!", e.uuid)
+}
+
+type InvalidUuidError struct {
+  uuid string
+}
+
+func (e InvalidUuidError) Error() string {
+    return fmt.Sprintf("%v isn't a valid uuid!", e.uuid)
+}
+

@@ -1,0 +1,9 @@
+postgres:
+  hostname: "localhost"
+  port: 5432
+  username: "guts_api"
+  password: "guts_api"
+  dbname: "guts"
+api:
+  hostname: "localhost"
+  port: 8080
