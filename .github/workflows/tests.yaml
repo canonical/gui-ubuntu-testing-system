@@ -1,10 +1,10 @@
-name: test-sql-files
+name: tests
 
 on:
   workflow_call:
 
 jobs:
-  test-sql-files:
+  tests:
     runs-on: ubuntu-latest
     steps:
       - uses: "actions/checkout@v2"
@@ -14,7 +14,7 @@ jobs:
         run: |
           #!/bin/bash
           set -ex
-          sudo sh -c 'echo "local   all             all                                trust\n" | tee /etc/postgresql/16/main/pg_hba.conf'
+          sudo sh -c 'echo "local   all             all                                trust\nhost all all      ::1/128      md5\nhost all postgres 127.0.0.1/32 md5\n" | tee /etc/postgresql/16/main/pg_hba.conf'
           # start the db instance
           sudo systemctl start postgresql.service
           # bootstrap the database
@@ -46,8 +46,18 @@ jobs:
           tests_rows=$(psql --no-align --quiet --tuples-only --user postgres guts -c 'SELECT * FROM tests;' | wc -l)
           users_rows=$(psql --no-align --quiet --tuples-only --user postgres guts -c 'SELECT * FROM users;' | wc -l)
           reporter_rows=$(psql --no-align --quiet --tuples-only --user postgres guts -c 'SELECT * FROM reporter;' | wc -l)
-          [[ "${jobs_rows}" == "60" ]] || exit 1
-          [[ "${tests_rows}" == "78" ]] || exit 1
+          [[ "${jobs_rows}" == "61" ]] || exit 1
+          [[ "${tests_rows}" == "81" ]] || exit 1
           [[ "${users_rows}" == "4" ]] || exit 1
-          [[ "${reporter_rows}" == "52" ]] || exit 1
-          
+          [[ "${reporter_rows}" == "53" ]] || exit 1
+      - name: Run unit tests
+        run: |
+          #!/bin/bash
+          git lfs pull
+          set -ex
+          test_dirs="guts/api"
+          for test_dir in $test_dirs; do
+            cd $test_dir
+            go test -v
+            cd -
+          done
