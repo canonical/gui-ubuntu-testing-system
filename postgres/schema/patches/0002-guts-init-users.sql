@@ -24,6 +24,7 @@ SELECT add_user_if_not_exists('guts_reporter', 'guts_reporter');
 
 -- api permissions
 GRANT SELECT, INSERT ON jobs TO guts_api;
+GRANT SELECT, INSERT ON tests TO guts_api;
 ALTER USER guts_api WITH LOGIN;
 
 -- spawner permissions
