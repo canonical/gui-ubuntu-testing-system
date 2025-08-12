@@ -8,6 +8,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: "actions/checkout@v2"
+      - uses: "actions/setup-go@v3"
       - name: Install postgres
         run: "sudo apt-get install -y postgresql"
       - name: Copy sql files to tmp directory and test applying them
@@ -46,10 +47,10 @@ jobs:
           tests_rows=$(psql --no-align --quiet --tuples-only --user postgres guts -c 'SELECT * FROM tests;' | wc -l)
           users_rows=$(psql --no-align --quiet --tuples-only --user postgres guts -c 'SELECT * FROM users;' | wc -l)
           reporter_rows=$(psql --no-align --quiet --tuples-only --user postgres guts -c 'SELECT * FROM reporter;' | wc -l)
-          [[ "${jobs_rows}" == "61" ]] || exit 1
-          [[ "${tests_rows}" == "81" ]] || exit 1
+          [[ "${jobs_rows}" == "63" ]] || exit 1
+          [[ "${tests_rows}" == "83" ]] || exit 1
           [[ "${users_rows}" == "4" ]] || exit 1
-          [[ "${reporter_rows}" == "53" ]] || exit 1
+          [[ "${reporter_rows}" == "55" ]] || exit 1
       - name: Run unit tests
         run: |
           #!/bin/bash
@@ -61,3 +62,12 @@ jobs:
             go test -v
             cd -
           done
+      - name: test coverage
+        working-directory: ./guts/api
+        run: |
+          #!/bin/bash
+          export GOBIN="$(pwd)/gobin"
+          mkdir -p "$GOBIN"
+          go install github.com/vladopajic/go-test-coverage/v2@latest
+          go test ./... -coverprofile=./cover.out -covermode=atomic -coverpkg=./...
+          ${GOBIN}/go-test-coverage --config=./.testcoverage.yml

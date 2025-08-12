@@ -12,3 +12,5 @@ jobs:
     uses: ./.github/workflows/lint-sql-files.yaml
   tests:
     uses: ./.github/workflows/tests.yaml
+  golangci-lint:
+    uses: ./.github/workflows/golangci-lint.yaml
