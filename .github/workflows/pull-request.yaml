@@ -10,5 +10,7 @@ jobs:
     uses: ./.github/workflows/mdlint.yaml
   sqllint:
     uses: ./.github/workflows/lint-sql-files.yaml
-  apply-schemas:
-    uses: ./.github/workflows/test-sql-schema.yaml
+  tests:
+    uses: ./.github/workflows/tests.yaml
+  golangci-lint:
+    uses: ./.github/workflows/golangci-lint.yaml
