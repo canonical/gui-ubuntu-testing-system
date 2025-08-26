@@ -21,3 +21,9 @@ func (e InvalidUuidError) Error() string {
     return fmt.Sprintf("%v isn't a valid uuid!", e.uuid)
 }
 
+type PostgresServiceNotUpError struct {}
+
+func (e PostgresServiceNotUpError) Error() string {
+  return fmt.Sprintf("Unit postgresql.service is not active.")
+}
+

@@ -14,3 +14,14 @@ func TestUuidNotFoundError(t *testing.T) {
   }
 }
 
+func SkipTestIfPostgresInactive(PgError error) bool {
+  var expectedType PostgresServiceNotUpError
+  if err != nil {
+    if reflect.DeepEqual(reflect.TypeOf(err), reflect.TypeOf(expectedType)) {
+      return true
+    } else {
+      return false
+    }
+  }
+}
+

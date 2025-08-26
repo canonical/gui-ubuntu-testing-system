@@ -11,7 +11,11 @@ func TestFindJobByUuid(t *testing.T) {
   gutsCfg, err := ParseConfig(configFilePath)
   CheckError(err)
   db, err = PostgresConnect(gutsCfg)
-  CheckError(err)
+  if SkipTestIfPostgresInactive(err) {
+    t.Skip("Skipping test as postgresql service is not up")
+  } else {
+    CheckError(err)
+  }
   job, err := FindJobByUuid(Uuid, db)
   CheckError(err)
   var TestJob SingleJob

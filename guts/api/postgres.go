@@ -3,10 +3,25 @@ package main
 import (
   "database/sql"
   "fmt"
+  "reflect"
+  "os/exec"
   _ "github.com/lib/pq"
 )
 
+func CheckPostgresServiceUp() error {
+  systemctlCommand := "systemctl status postgresql.service"
+  systemctlCommand := exec.Command("systemctl", "status", "postgresql.service")
+  if err := systemctlCommand.Run(); err != nil {
+    return PostgresServiceNotUpError()
+  }
+  return nil
+}
+
 func PostgresConnect(config GutsApiConfig) (*sql.DB, error) {
+  err := CheckPostgresServiceUp()
+  if err != nil {
+    return err
+  }
   ConnectString := config.PostgresConnectString()
   db, err := sql.Open("postgres", ConnectString)
   return db, err

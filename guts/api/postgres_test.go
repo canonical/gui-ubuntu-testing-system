@@ -8,7 +8,11 @@ import (
 func TestPostgresConnect(t *testing.T) {
   gutsCfg, err := ParseConfig(configFilePath)
   db, err = PostgresConnect(gutsCfg)
-  CheckError(err)
+  if SkipTestIfPostgresInactive(err) {
+    t.Skip("Skipping test as postgresql service is not up")
+  } else {
+    CheckError(err)
+  }
   if err != nil {
     t.Errorf("Postgres connection failed with creds:\n%v", gutsCfg.Postgres)
   }
