@@ -69,7 +69,7 @@ func main() { // coverage-ignore
   router := gin.Default()
   router.GET("/job/:uuid", JobEndpoint)
   router.GET("/artifacts/:uuid/results.tar.gz", ArtifactsEndpoint)
-  router_address := fmt.Sprintf("%v:%v", gutsCfg.Api.Hostname, gutsCfg.Api.Port)
+  router_address := fmt.Sprintf("%v:%v", GutsCfg.Api.Hostname, GutsCfg.Api.Port)
   err = router.Run(router_address)
   CheckError(err)
 }
