@@ -17,12 +17,12 @@ func CheckPostgresServiceUp() error {
   return nil
 }
 
-func PostgresConnect(config GutsApiConfig) (*sql.DB, error) {
+func PostgresConnect() (*sql.DB, error) {
   err := CheckPostgresServiceUp()
   if err != nil {
     return err
   }
-  ConnectString := config.PostgresConnectString()
+  ConnectString := GutsCfg.PostgresConnectString()
   db, err := sql.Open("postgres", ConnectString)
   return db, err
 }

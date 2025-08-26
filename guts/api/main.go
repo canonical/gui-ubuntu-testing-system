@@ -61,9 +61,9 @@ func ArtifactsEndpoint(c *gin.Context) {
 
 func main() { // coverage-ignore
   ParseArgs()
-  gutsCfg, err := ParseConfig(configFilePath)
+  err := ParseConfig(configFilePath)
   CheckError(err)
-  db, err = PostgresConnect(gutsCfg)
+  db, err = PostgresConnect()
   CheckError(err)
   defer DeferredErrCheck(db.Close)
   router := gin.Default()

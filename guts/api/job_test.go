@@ -8,9 +8,9 @@ import (
 func TestFindJobByUuid(t *testing.T) {
   Uuid := "4ce9189f-561a-4886-aeef-1836f28b073b"
   ParseArgs()
-  gutsCfg, err := ParseConfig(configFilePath)
+  err := ParseConfig(configFilePath)
   CheckError(err)
-  db, err = PostgresConnect(gutsCfg)
+  db, err = PostgresConnect()
   if SkipTestIfPostgresInactive(err) {
     t.Skip("Skipping test as postgresql service is not up")
   } else {

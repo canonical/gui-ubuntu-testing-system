@@ -21,21 +21,24 @@ type GutsApiConfig struct {
   }
   Tarball struct {
     TarBallCachePath string `yaml:"tarball_cache_path"`
-    TarBallCacheMaxSize string `yaml:"tarball_cache_max_size"`
-    TarBallCacheReductionThreshold string `yaml:"tarball_cache_reduction_threshold"`
+    TarBallCacheMaxSize int `yaml:"tarball_cache_max_size"`  // in bytes
+    TarBallCacheReductionThreshold int `yaml:"tarball_cache_reduction_threshold"`  // in bytes
   }
 }
 
-func ParseConfig(filePath string) (GutsApiConfig, error) {
-  var config GutsApiConfig
+var (
+  GutsCfg GutsApiConfig
+)
+
+func ParseConfig(filePath string) error {
   filename, err := filepath.Abs(filePath)
   if err != nil {
-    return config, err
+    return err
   }
   yamlFile, err := os.ReadFile(filename)
   if err != nil {
-    return config, err
+    return err
   }
-  err = yaml.Unmarshal(yamlFile, &config)
-  return config, err
+  err = yaml.Unmarshal(yamlFile, &GutsCfg)
+  return err
 }

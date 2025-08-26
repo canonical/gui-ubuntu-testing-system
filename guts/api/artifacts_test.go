@@ -13,9 +13,9 @@ import (
 
 func TestFindArtifactUrlsByUuid(t *testing.T) {
   Uuid := "eccd3988-490d-4414-be97-605d1ac81073"
-  gutsCfg, err := ParseConfig("./guts-api.yaml")
+  err := ParseConfig("./guts-api.yaml")
   CheckError(err)
-  db, err = PostgresConnect(gutsCfg)
+  db, err = PostgresConnect()
   if SkipTestIfPostgresInactive(err) {
     t.Skip("Skipping test as postgresql service is not up")
   } else {
@@ -38,9 +38,9 @@ func TestCollateArtifacts(t *testing.T) {
 
   // Get output artifacts for given uuid
   Uuid := "27549483-e8f5-497f-a05d-e6d8e67a8e8a"
-  gutsCfg, err := ParseConfig("./guts-api.yaml")
+  err := ParseConfig("./guts-api.yaml")
   CheckError(err)
-  db, err = PostgresConnect(gutsCfg)
+  db, err = PostgresConnect()
   if SkipTestIfPostgresInactive(err) {
     t.Skip("Skipping test as postgresql service is not up")
   } else {
@@ -92,9 +92,9 @@ func TestCollateArtifacts(t *testing.T) {
 
 func TestCollateArtifactsDownloadFails(t *testing.T) {
   Uuid := "44eea936-1e4a-4e20-b25d-ab0df9978ada"
-  gutsCfg, err := ParseConfig("./guts-api.yaml")
+  err := ParseConfig("./guts-api.yaml")
   CheckError(err)
-  db, err = PostgresConnect(gutsCfg)
+  db, err = PostgresConnect()
   if SkipTestIfPostgresInactive(err) {
     t.Skip("Skipping test as postgresql service is not up")
   } else {
@@ -209,9 +209,9 @@ func TestTarUpFilesInGivenDirectoriesInputValidation(t *testing.T) {
 
 func TestFindArtifactUrlsByUuidFails(t *testing.T) {
   Uuid := "?"
-  gutsCfg, err := ParseConfig("./guts-api.yaml")
+  err := ParseConfig("./guts-api.yaml")
   CheckError(err)
-  db, err = PostgresConnect(gutsCfg)
+  db, err = PostgresConnect()
   if SkipTestIfPostgresInactive(err) {
     t.Skip("Skipping test as postgresql service is not up")
   } else {

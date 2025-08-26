@@ -11,7 +11,7 @@ import (
 
 
 func TestParseConfigSuccess(t *testing.T) {
-  cfg, err := ParseConfig("./guts-api.yaml")
+  err := ParseConfig("./guts-api.yaml")
   CheckError(err)
   var wanted GutsApiConfig
   wanted.Postgres.Host = "localhost"
@@ -21,13 +21,13 @@ func TestParseConfigSuccess(t *testing.T) {
   wanted.Postgres.DbName = "guts"
   wanted.Api.Hostname = "localhost"
   wanted.Api.Port = 8080
-  if !reflect.DeepEqual(cfg, wanted) {
+  if !reflect.DeepEqual(GutsCfg, wanted) {
     t.Errorf("Parsed config not the same as wanted config!\nExpected:\n%v\nActual:\n%v", cfg, wanted)
   }
 }
 
 func TestParseConfigFileNotFound(t *testing.T) {
-  _, err := ParseConfig("./guts-api-no-exist.yaml")
+  err := ParseConfig("./guts-api-no-exist.yaml")
   var ExpectedType *fs.PathError
   if reflect.TypeOf(err) != reflect.TypeOf(ExpectedType) {
     t.Errorf("Error type not as expected!\nExpected: %v\nActual: %v", ExpectedType, reflect.TypeOf(err))
@@ -48,7 +48,7 @@ func TestParseConfigYamlParsingFailure(t *testing.T) {
   _, err = f.Write(data)
   CheckError(err)
 
-  _, err = ParseConfig(f.Name())
+  err = ParseConfig(f.Name())
 
   var ExpectedType *yaml.TypeError
   if reflect.TypeOf(err) != reflect.TypeOf(ExpectedType) {
