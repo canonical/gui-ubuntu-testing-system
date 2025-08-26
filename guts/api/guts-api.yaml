@@ -7,3 +7,7 @@ postgres:
 api:
   hostname: "localhost"
   port: 8080
+tarball:
+  tarball_cache_path: /srv/tarball-cache/
+  tarball_cache_max_size: 10G # Maybe these need to be in bytes, we will see
+  tarball_cache_reduction_threshold: 9G

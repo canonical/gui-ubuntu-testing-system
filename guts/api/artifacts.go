@@ -13,11 +13,14 @@ import (
   "strings"
   "reflect"
   "net/url"
+  "time"
+  "os"
 )
 
 
 func CollateArtifacts(uuidToFind string, db *sql.DB) ([]byte, error) { // coverage-ignore
   var gzippedTarBytes []byte
+  // TODO: check if tarball already exists at /srv/tarball-cache/<uuid>/results.tar.gz
   urls, err := FindArtifactUrlsByUuid(uuidToFind, db)
   if err != nil {
     return gzippedTarBytes, err
@@ -38,7 +41,19 @@ func CollateArtifacts(uuidToFind string, db *sql.DB) ([]byte, error) { // covera
   if err != nil {
     return gzippedTarBytes, err
   }
+  // TODO: write bytes to /srv/tarball-cache/<uuid>/results.tar.gz
+  // TODO: clear cache if necessary
   return gzippedTarBytes, nil
+}
+
+func WriteTarballToCache(tarBall []byte, uuid string) error {
+  now := time.Now().Unix()
+  // make directory, first check if exists
+  // write tarfile
+  // write <uuid>.last_downloaded file
+  // return
+  err := os.WriteFile()
+
 }
 
 func GzipTarArchiveBytes(tarArchive []byte) ([]byte, error) {
