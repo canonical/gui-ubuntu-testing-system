@@ -24,7 +24,6 @@ type GutsApiConfig struct {
 func ParseConfig(filePath string) (GutsApiConfig, error) {
   var config GutsApiConfig
   filename, _ := filepath.Abs(filePath)
-  // yamlFile, err := ioutil.ReadFile(filename)
   yamlFile, err := os.ReadFile(filename)
   if err != nil {
     return config, err
