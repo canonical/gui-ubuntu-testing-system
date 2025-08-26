@@ -10,7 +10,8 @@ func TestFindJobByUuid(t *testing.T) {
   ParseArgs()
   gutsCfg, err := ParseConfig(configFilePath)
   CheckError(err)
-  db = PostgresConnect(gutsCfg)
+  db, err = PostgresConnect(gutsCfg)
+  CheckError(err)
   job, err := FindJobByUuid(Uuid, db)
   CheckError(err)
   var TestJob SingleJob

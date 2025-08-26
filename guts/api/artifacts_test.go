@@ -15,7 +15,8 @@ func TestFindArtifactUrlsByUuid(t *testing.T) {
   Uuid := "eccd3988-490d-4414-be97-605d1ac81073"
   gutsCfg, err := ParseConfig("./guts-api.yaml")
   CheckError(err)
-  db = PostgresConnect(gutsCfg)
+  db, err = PostgresConnect(gutsCfg)
+  CheckError(err)
   result_urls, err := FindArtifactUrlsByUuid(Uuid, db)
   CheckError(err)
   expectedUrls := make([]string, 3)
@@ -35,7 +36,8 @@ func TestCollateArtifacts(t *testing.T) {
   Uuid := "27549483-e8f5-497f-a05d-e6d8e67a8e8a"
   gutsCfg, err := ParseConfig("./guts-api.yaml")
   CheckError(err)
-  db = PostgresConnect(gutsCfg)
+  db, err = PostgresConnect(gutsCfg)
+  CheckError(err)
   artifactsTarGz, err := CollateArtifacts(Uuid, db)
   CheckError(err)
 
@@ -84,7 +86,8 @@ func TestCollateArtifactsDownloadFails(t *testing.T) {
   Uuid := "44eea936-1e4a-4e20-b25d-ab0df9978ada"
   gutsCfg, err := ParseConfig("./guts-api.yaml")
   CheckError(err)
-  db = PostgresConnect(gutsCfg)
+  db, err = PostgresConnect(gutsCfg)
+  CheckError(err)
   artifactsTarGz, err := CollateArtifacts(Uuid, db)
   if len(artifactsTarGz) != 0 {
     t.Errorf("Variable should have length 0 but instead has length %v", len(artifactsTarGz))
@@ -196,7 +199,8 @@ func TestFindArtifactUrlsByUuidFails(t *testing.T) {
   Uuid := "?"
   gutsCfg, err := ParseConfig("./guts-api.yaml")
   CheckError(err)
-  db = PostgresConnect(gutsCfg)
+  db, err = PostgresConnect(gutsCfg)
+  CheckError(err)
   _, err = FindArtifactUrlsByUuid(Uuid, db)
   expectedErrString := "No jobs with uuid ? found!"
   if !reflect.DeepEqual(err.Error(), expectedErrString) {

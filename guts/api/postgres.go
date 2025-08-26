@@ -6,11 +6,10 @@ import (
   _ "github.com/lib/pq"
 )
 
-func PostgresConnect(config GutsApiConfig) *sql.DB {
+func PostgresConnect(config GutsApiConfig) (*sql.DB, error) {
   ConnectString := config.PostgresConnectString()
   db, err := sql.Open("postgres", ConnectString)
-  CheckError(err)
-  return db
+  return db, err
 }
 
 func (g GutsApiConfig) PostgresConnectString() string {
