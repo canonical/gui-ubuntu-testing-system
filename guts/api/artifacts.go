@@ -15,45 +15,156 @@ import (
   "net/url"
   "time"
   "os"
+  "sort"
 )
 
 
 func CollateArtifacts(uuidToFind string, db *sql.DB) ([]byte, error) { // coverage-ignore
   var gzippedTarBytes []byte
-  // TODO: check if tarball already exists at /srv/tarball-cache/<uuid>/results.tar.gz
+  uuidCacheDir := fmt.Sprintf("%v/%v", GutsCfg.Tarball.TarBallCachePath, uuid)
+  cachedTarFile := fmt.Sprintf("%v/results.tar.gz", uuidCacheDir)
+  cachedLastDownloadedFile := fmt.Sprintf("%v/%v.last_downloaded", uuidCacheDir, uuid)
+
+  if AllFilesExist(uuidCacheDir, cachedTarFile, cachedLastDownloadedFile) {
+    dat, err := os.ReadFile(cachedTarFile)
+    err := RefreshLastDownloadedFile(cachedLastDownloadedFile)
+    if err != nil {
+      return err
+    }
+    return dat, err
+  }
+
   urls, err := FindArtifactUrlsByUuid(uuidToFind, db)
   if err != nil {
     return gzippedTarBytes, err
   }
+
   directoryNames, err := CreateOutputDirectoriesFromUrls(urls)
   if err != nil {
     return gzippedTarBytes, err
   }
+
   allTarFilesBytes, err := DownloadTarFiles(urls)
   if err != nil {
     return gzippedTarBytes, err
   }
+
   allFilesInTarBytes, err := TarUpFilesInGivenDirectories(directoryNames, allTarFilesBytes)
   if err != nil {
     return gzippedTarBytes, err
   }
+
   gzippedTarBytes, err = GzipTarArchiveBytes(allFilesInTarBytes)
   if err != nil {
     return gzippedTarBytes, err
   }
-  // TODO: write bytes to /srv/tarball-cache/<uuid>/results.tar.gz
-  // TODO: clear cache if necessary
+
+  err = WriteTarballToCache(gzippedTarBytes, uuidToFind, uuidCacheDir, cachedTarFile, cachedLastDownloadedFile)
+  if err != nil {
+    return gzippedTarBytes, err
+  }
+
+  err = CacheRetentionPolicy(uuidCacheDir)
+  if err != nil {
+    return gzippedTarBytes, err
+  }
+
   return gzippedTarBytes, nil
 }
 
-func WriteTarballToCache(tarBall []byte, uuid string) error {
-  now := time.Now().Unix()
-  // make directory, first check if exists
-  // write tarfile
-  // write <uuid>.last_downloaded file
-  // return
-  err := os.WriteFile()
+func CacheRetentionPolicy(uuidCacheDir string) error {
 
+  entries, err := os.ReadDir(uuidCacheDir)
+  now := time.Now().Unix()
+  if err != nil {
+    return err
+  }
+
+  uuidEpochMap := make(map[int64]string)
+  sliceOfStamps := make([]int64, len(entries))
+
+  for idx, e := range(entries) {
+    entryLastUpdatedFile := fmt.Sprintf("%v/%v.last_downloaded", e.Name(), e.Name())
+    dat, err := os.ReadFile(entryLastUpdatedFile)
+    lastUpdated := int64(string(dat))
+    uuidEpochMap[lastUpdated] = e.Name()
+    sliceOfStamps[idx] = lastUpdated
+  }
+
+  sort.Ints(sliceOfStamps)
+
+  for _, lastUpdated := range(sliceOfStamps) {
+    thisSpecificDir := fmt.Sprintf("%v/%v", uuidCacheDir, uuidEpochMap[lastUpdated])
+    dirSize, err := GetDirSize(uuidCacheDir)
+    if err != nil {
+      return err
+    }
+    if dirSize < GutsCfg.Tarball.TarBallCacheReductionThreshold {
+      return nil
+    }
+    err = os.RemoveAll(thisSpecificDir)
+    if err != nil {
+      return err
+    }
+  }
+  return nil
+}
+
+func GetDirSize(directory string) (int64, error) {
+  var directorySize int64
+  dir, err := os.Open(directory)
+  if err != nil {
+    return directorySize, err
+  }
+  defer DeferredErrCheck(dir.Close)
+  fileInfo, err := dir.Stat()
+  if err != nil {
+    return directorySize, err
+  }
+  directorySize = fileInfo.Size()
+  return directorySize, err
+}
+
+func RefreshLastDownloadedFile(cachedLastDownloadedFile string) error {
+  now := time.Now().Unix()
+  lastDownloaded := []byte(string(now))
+  err := AtomicWrite(lastDownloaded, cachedLastDownloadedFile)
+  if err != nil {
+    return err
+  }
+  return nil
+}
+
+func WriteTarballToCache(tarBall []byte, uuid string, uuidCacheDir string, cachedTarFile string, cachedLastDownloadedFile string) error {
+  if AllFilesExist(uuidCacheDir, cachedTarFile, cachedLastDownloadedFile) {
+    err := RefreshLastDownloadedFile(cachedLastDownloadedFile)
+    if err != nil {
+      return err
+    }
+    return nil
+  }
+
+  err := os.RemoveAll(uuidCacheDir)
+  if err != nil {
+    return err
+  }
+
+  err = os.Mkdir(uuidCacheDir, 0755)
+  if err != nil {
+    return err
+  }
+
+  err = AtomicWrite(tarBall, cachedTarFile)
+  if err != nil {
+    return err
+  }
+
+  err = RefreshLastDownloadedFile(cachedLastDownloadedFile)
+  if err != nil {
+    return err
+  }
+
+  return nil
 }
 
 func GzipTarArchiveBytes(tarArchive []byte) ([]byte, error) {

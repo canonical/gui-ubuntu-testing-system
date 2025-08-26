@@ -34,7 +34,7 @@ func AllFilesExist(paths ...string) error {
 
 func RemoveFiles(paths ...string) error {
   for i := 0; i < len(paths); i++ {
-    if FileOrDirExists(paths[i]); err != nil {
+    if err := FileOrDirExists(paths[i]); err != nil {
       os.
     }
 
