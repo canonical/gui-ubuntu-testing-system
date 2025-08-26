@@ -30,14 +30,15 @@ func JobEndpoint(c *gin.Context) {
     c.IndentedJSON(http.StatusBadRequest, gin.H{"message": err.Error()})
   }
   job, err := GetCompleteResultsForUuid(uuid, db)
-  // modify this!
-  // only return 404 when that's the error.
-  // when something else goes wrong, we need 500.
   if err != nil {
-    c.IndentedJSON(http.StatusNotFound, gin.H{"message": err.Error()})
-  } else {
-    c.IndentedJSON(http.StatusOK, job.toJson())
+    switch t := err.(type) {
+    default:
+      c.IndentedJSON(http.StatusInternalServerError, gin.H{"message": fmt.Sprintf("Internal server error:\n%v", err.Error())})
+    case *UuidNotFoundError:
+      c.IndentedJSON(http.StatusNotFound, gin.H{"message": err.Error()})
+    }
   }
+  c.IndentedJSON(http.StatusOK, job.toJson())
 }
 
 func ArtifactsEndpoint(c *gin.Context) {
@@ -47,14 +48,15 @@ func ArtifactsEndpoint(c *gin.Context) {
     c.IndentedJSON(http.StatusBadRequest, gin.H{"message": err.Error()})
   }
   artifactsTarGz, err := CollateArtifacts(uuid, db)
-  // modify this!
-  // only return 404 when that's the error.
-  // when something else goes wrong, we need 500.
   if err != nil {
-    c.IndentedJSON(http.StatusNotFound, gin.H{"message": err.Error()})
-  } else {
-    c.Data(http.StatusOK, "application/x-tar", artifactsTarGz)
+    switch t := err.(type) {
+    default:
+      c.IndentedJSON(http.StatusInternalServerError, gin.H{"message": fmt.Sprintf("Internal server error:\n%v", err.Error())})
+    case *UuidNotFoundError:
+      c.IndentedJSON(http.StatusNotFound, gin.H{"message": err.Error()})
+    }
   }
+  c.Data(http.StatusOK, "application/x-tar", artifactsTarGz)
 }
 
 func main() { // coverage-ignore
