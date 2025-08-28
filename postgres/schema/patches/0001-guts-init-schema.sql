@@ -13,7 +13,7 @@ CREATE TABLE IF NOT EXISTS jobs (
     image_url VARCHAR(300) NOT NULL,
     reporter VARCHAR(50) NOT NULL,
     status VARCHAR(10) NOT NULL,
-    submitted_at VARCHAR(50) NOT NULL,
+    submitted_at TIMESTAMP WITH TIME ZONE NOT NULL,
     requester VARCHAR(50) NOT NULL,
     debug BOOLEAN NOT NULL,
     priority INTEGER NOT NULL,

@@ -43,6 +43,7 @@ func JobEndpoint(c *gin.Context) {
       c.IndentedJSON(http.StatusNotFound, gin.H{"message": err.Error()})
     }
   }
+  // not sure if this will marshal the time field properly. need to check
   c.IndentedJSON(http.StatusOK, job.toJson())
 }
 

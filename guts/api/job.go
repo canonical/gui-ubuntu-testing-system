@@ -4,6 +4,7 @@ import (
   "encoding/json"
   "database/sql"
   "github.com/lib/pq"
+  "time"
 )
 
 var (
@@ -19,7 +20,7 @@ type SingleJob struct {
   ImageUrl string `json:"image_url"`
   Reporter string `json:"reporter"`
   Status string `json:"status"`
-  SubmittedAt string `json:"submitted_at"`
+  SubmittedAt time.Time `json:"submitted_at"`
   Requester string `json:"requester"`
   Debug bool `json:"debug"`
   Priority int `json:"priority"`
