@@ -28,6 +28,36 @@ func DeferredErrCheckStringArg(f func(s string) error, s string) {
   CheckError(err)
 }
 
+func RequestEndpoint(c *gin.Context) {
+  bareKey := c.GetHeader("X-Api-Key")
+  var jobReq JobRequest
+  if err := c.BindJson(&jobReq); err != nil {
+    c.IndentedJSON(http.StatusInternalServerError, gin.H{"message": fmt.Sprintf("Internal server error:\n%v", err.Error())})
+  }
+  retJson, err := ProcessJobRequest(bareKey, jobReq)
+  if err != nil {
+    switch t := err.(type) {
+    default:
+      c.IndentedJSON(http.StatusInternalServerError, gin.H{"message": fmt.Sprintf("Internal server error:\n%v", err.Error())})
+    case *EmptyApiKeyError:
+      c.IndentedJSON(http.StatusUnauthorized, gin.H{"message": err.Error()})
+    case: *ApiKeyNotAcceptedError:
+      c.IndentedJSON(http.StatusUnauthorized, gin.H{"message": err.Error()})
+    case *url.Error:
+      c.IndentedJSON(http.StatusBadRequest, gin.H{"message": err.Error()})
+    case: *BadUrlError:
+      c.IndentedJSON(http.StatusBadRequest, gin.H{"message": err.Error()})
+    case: *NonWhitelistedDomainError:
+      c.IndentedJSON(http.StatusForbidden, gin.H{"message": err.Error()})
+    case: *GenericGitError:
+      c.IndentedJSON(http.StatusBadRequest, gin.H{"message": err.Error()})
+    case: *PlanFileNonexistentError:
+      c.IndentedJSON(http.StatusBadRequest, gin.H{"message": err.Error()})
+    }
+  }
+  c.IndentedJSON(http.StatusOK, retJson)
+}
+
 func JobEndpoint(c *gin.Context) {
   uuid := c.Param("uuid")
   err := ValidateUuid(uuid)

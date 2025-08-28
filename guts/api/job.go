@@ -8,7 +8,20 @@ import (
 )
 
 var (
-  AllJobColumns = [...]string{"uuid", "artifact_url", "tests_repo", "tests_repo_branch", "tests_plans", "image_url", "reporter", "status", "submitted_at", "requester", "debug", "priority"}
+  AllJobColumns = [...]string{
+    "uuid",
+    "artifact_url",
+    "tests_repo",
+    "tests_repo_branch",
+    "tests_plans",
+    "image_url",
+    "reporter",
+    "status",
+    "submitted_at",
+    "requester",
+    "debug",
+    "priority"
+  }
 )
 
 type JobEntry struct {

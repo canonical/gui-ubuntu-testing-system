@@ -5,6 +5,8 @@ import (
   "reflect"
   "regexp"
   "os"
+  "crypto/sha256"
+  "encoding/base64"
 )
 
 func ValidateUuid(Uuid string) error {
@@ -52,5 +54,26 @@ func AtomicWrite(data []byte, filename string) error {
     return err
   }
   return nil
+}
+
+func Sha256sumOfString(inputString string) (string, error) {
+  hasher := sha256.New()
+  hasher.Write([]byte(inputString))
+  return base64.URLEncoding.EncodeToString(hasher.Sum(nil))
+}
+
+func GetStatusUrlForUuid(uuid string) string {
+  statusUrl := fmt.Sprintf("%v%v/status/%v", GetProtocolPrefix(), GutsCfg.Api.Hostname, uuid)
+  return statusUrl
+}
+
+func GetProtocolPrefix() string {
+  if GutsCfg.Api.Port == 8080 {
+    return "http://"
+  } else if GutsCfg.Api.Port == 443 {
+    return "https://"
+  } else {
+    return ""
+  }
 }
 

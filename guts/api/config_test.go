@@ -21,6 +21,9 @@ func TestParseConfigSuccess(t *testing.T) {
   wanted.Tarball.TarballCachePath = "/srv/tarball-cache/"
   wanted.Tarball.TarballCacheMaxSize = 10737418240
   wanted.Tarball.TarballCacheReductionThreshold = 9663676416
+  wanted.Api.ArtifactDomains = {"launchpad.net"}
+  wanted.Api.TestbedDomains = {"cdimage.ubuntu.com"}
+  wanted.Api.GitDomains = {"git.launchpad.net", "github.com"}
   if !reflect.DeepEqual(GutsCfg, wanted) {
     t.Errorf("Parsed config not the same as wanted config!\nExpected:\n%v\nActual:\n%v", cfg, wanted)
   }
