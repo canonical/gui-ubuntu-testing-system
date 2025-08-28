@@ -19,7 +19,7 @@ import (
 )
 
 
-func CollateArtifacts(uuidToFind string, db *sql.DB) ([]byte, error) { // coverage-ignore
+func CollateArtifacts(uuidToFind string) ([]byte, error) { // coverage-ignore
   var gzippedTarBytes []byte
   uuidCacheDir := fmt.Sprintf("%v/%v", GutsCfg.Tarball.TarBallCachePath, uuid)
   cachedTarFile := fmt.Sprintf("%v/results.tar.gz", uuidCacheDir)
@@ -34,7 +34,7 @@ func CollateArtifacts(uuidToFind string, db *sql.DB) ([]byte, error) { // covera
     return dat, err
   }
 
-  urls, err := FindArtifactUrlsByUuid(uuidToFind, db)
+  urls, err := FindArtifactUrlsByUuid(uuidToFind)
   if err != nil {
     return gzippedTarBytes, err
   }
@@ -268,15 +268,10 @@ func TarUpFilesInGivenDirectories(dirsForFiles []string, inputFiles []map[string
   return returnBytes, nil
 }
 
-func FindArtifactUrlsByUuid(uuidToFind string, db *sql.DB) ([]string, error) {
+func FindArtifactUrlsByUuid(uuidToFind string) ([]string, error) {
   var result_urls []string
-  stmt, err := db.Prepare("SELECT results_url FROM tests WHERE uuid = $1")
-  if err != nil { // coverage-ignore
-    return result_urls, err 
-  }
-  defer DeferredErrCheck(stmt.Close)
-
-  rows, err := stmt.Query(uuidToFind)
+  var params = [...]string{"results_url"}
+  rows, err := Driver.Query("tests", uuidToFind, params)
   if err != nil { // coverage-ignore
     return result_urls, err 
   }

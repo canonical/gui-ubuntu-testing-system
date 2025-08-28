@@ -8,12 +8,9 @@ import (
 
 
 type GutsApiConfig struct {
-  Postgres struct {
-    Host string `yaml:"hostname"`
-    Port int `yaml:"port"`
-    User string `yaml:"username"`
-    Password string `yaml:"password"`
-    DbName string `yaml:"dbname"`
+  Database struct {
+    Driver string `yaml:"driver"`
+    ConnectionString string `yaml:"connection_string"`
   }
   Api struct {
     Hostname string `yaml:"hostname"`

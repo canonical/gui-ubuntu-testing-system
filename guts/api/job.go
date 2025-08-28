@@ -6,6 +6,10 @@ import (
   "github.com/lib/pq"
 )
 
+var (
+  AllJobColumns = [...]string{"uuid", "artifact_url", "tests_repo", "tests_repo_branch", "tests_plans", "image_url", "reporter", "status", "submitted_at", "requester", "debug", "priority"}
+)
+
 type SingleJob struct {
   Uuid string `json:"uuid"`
   ArtifactUrl *string `json:"artifact_url"`
@@ -46,14 +50,14 @@ func (j JobWithTestsDetails) toJson() string {
   return string(b)
 }
 
-func GetCompleteResultsForUuid(uuidToFind string, db *sql.DB) (JobWithTestsDetails, error) {
+func GetCompleteResultsForUuid(uuidToFind string) (JobWithTestsDetails, error) {
   var completeJob JobWithTestsDetails
-  job, err := FindJobByUuid(uuidToFind, db)
+  job, err := FindJobByUuid(uuidToFind)
   if err != nil {
     return completeJob, err
   }
 
-  testResults, err := CollateUuidTestResults(uuidToFind, db)
+  testResults, err := CollateUuidTestResults(uuidToFind)
   if err != nil { // coverage-ignore
     return completeJob, err
   }
@@ -64,16 +68,11 @@ func GetCompleteResultsForUuid(uuidToFind string, db *sql.DB) (JobWithTestsDetai
   return completeJob, nil
 }
 
-func CollateUuidTestResults(uuidToFind string, db *sql.DB) (map[string]string, error) {
+func CollateUuidTestResults(uuidToFind string) (map[string]string, error) {
   testResults := make(map[string]string)
 
-  stmt, err := db.Prepare("SELECT test_case, state FROM tests WHERE uuid = $1")
-  if err != nil { // coverage-ignore
-    return testResults, err
-  }
-  defer DeferredErrCheck(stmt.Close)
-
-  rows, err := stmt.Query(uuidToFind)
+  var params = [...]string{"test_case", "state"}
+  rows, err := Driver.Query("tests", uuidToFind, params)
   if err != nil { // coverage-ignore
     return testResults, err
   }
@@ -91,16 +90,14 @@ func CollateUuidTestResults(uuidToFind string, db *sql.DB) (map[string]string, e
   return testResults, nil
 }
 
-func FindJobByUuid(uuidToFind string, db *sql.DB) (SingleJob, error) {
+func FindJobByUuid(uuidToFind string) (SingleJob, error) {
   var job SingleJob
 
-  stmt, err := db.Prepare("SELECT uuid, artifact_url, tests_repo, tests_repo_branch, tests_plans, image_url, reporter, status, submitted_at, requester, debug, priority FROM jobs WHERE uuid=$1")
+  row, err := Driver.QueryRow("jobs", uuidToFind, AllJobColumns)
   if err != nil { // coverage-ignore
     return job, err
   }
-  defer DeferredErrCheck(stmt.Close)
-
-  err = stmt.QueryRow(uuidToFind).Scan(
+  err = row.Scan(
     &job.Uuid,
     &job.ArtifactUrl,
     &job.TestsRepo,
@@ -114,6 +111,7 @@ func FindJobByUuid(uuidToFind string, db *sql.DB) (SingleJob, error) {
     &job.Debug,
     &job.Priority,
   )
+
   if err != nil {
     if err == sql.ErrNoRows {
       return job, UuidNotFoundError{uuid: uuidToFind}

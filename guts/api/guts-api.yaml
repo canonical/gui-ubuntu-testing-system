@@ -1,9 +1,10 @@
-postgres:
-  hostname: "localhost"
-  port: 5432
-  username: "guts_api"
-  password: "guts_api"
-  dbname: "guts"
+database:
+  # for postgres
+  driver: "postgres"  # https://go.dev/wiki/SQLDrivers
+  connection_string: "host=localhost port=5432 user=guts_api password=guts_api dbname=guts sslmode=disable"
+  # for sqlite
+  # driver: "sqlite"
+  # connection_string: "/path/to/sqlite.db"
 api:
   hostname: "localhost"
   port: 8080

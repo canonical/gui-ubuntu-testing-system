@@ -14,11 +14,7 @@ func TestParseConfigSuccess(t *testing.T) {
   err := ParseConfig("./guts-api.yaml")
   CheckError(err)
   var wanted GutsApiConfig
-  wanted.Postgres.Host = "localhost"
-  wanted.Postgres.Port = 5432
-  wanted.Postgres.User = "guts_api"
-  wanted.Postgres.Password = "guts_api"
-  wanted.Postgres.DbName = "guts"
+  wanted.Database.ConnectionString = "host=localhost port=5432 user=guts_api password=guts_api dbname=guts sslmode=disable"
   wanted.Api.Hostname = "localhost"
   wanted.Api.Port = 8080
   if !reflect.DeepEqual(GutsCfg, wanted) {

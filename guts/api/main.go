@@ -5,6 +5,11 @@ import (
   "net/http"
   "github.com/gin-gonic/gin"
   "log"
+  "guts_db"
+)
+
+var (
+  Driver DbDriver
 )
 
 func CheckError(err error) { // coverage-ignore
@@ -64,6 +69,7 @@ func main() { // coverage-ignore
   err := ParseConfig(configFilePath)
   CheckError(err)
   db, err = PostgresConnect()
+  Driver, err = NewDbDriver(GutsApiConfig)
   CheckError(err)
   defer DeferredErrCheck(db.Close)
   router := gin.Default()

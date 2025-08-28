@@ -8,7 +8,6 @@ import (
 
 var (
   configFilePath string
-  db *sql.DB
 )
 
 func ParseArgs() {
