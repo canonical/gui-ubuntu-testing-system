@@ -64,13 +64,13 @@ func (d DbDriver) Available() error {
   return err
 }
 
-func (d DbDriver) QueryRow(table, uuid string, fields [...]string) (*sql.Row, error) {
-  row, err := d.Interface.InterfaceQueryRow(table, uuid, fields)
+func (d DbDriver) QueryRow(table, queryField, queryValue string, fields [...]string) (*sql.Row, error) {
+  row, err := d.Interface.InterfaceQueryRow(table, queryField, queryValue, fields)
   return row, err
 }
 
-func (d DbDriver) Query(table, uuid string, fields [...]string) (*sql.Rows, error) {
-  rows, err := d.Interface.InterfaceQuery(table, uuid, fields)
+func (d DbDriver) Query(table, queryField, queryValue string, fields [...]string) (*sql.Rows, error) {
+  rows, err := d.Interface.InterfaceQuery(table, queryField, queryValue, fields)
   return rows, err
 }
 
@@ -81,8 +81,8 @@ type DbOperationInterface interface {
   DbAvailable() error
   // maybe this functionality will move into the Driver
   // and instead, we'll just have a CreateQueryString function
-  InterfaceQueryRow(table, uuid string, fields [...]string) (*sql.Row, error)
-  InterfaceQuery(table, uuid string, fields [...]string) (*sql.Rows, error)
+  InterfaceQueryRow(table, queryField, queryValue string, fields [...]string) (*sql.Row, error)
+  InterfaceQuery(table, queryField, queryValue string, fields [...]string) (*sql.Rows, error)
 }
 
 type PgOperationInterface struct {
@@ -106,27 +106,27 @@ func (p PgOperationInterface) DbAvailable() error {
   return nil
 }
 
-func (p PgOperationInterface) InterfaceQueryRow(table, uuid string, fields [...]string) (*sql.Row, error) {
+func (p PgOperationInterface) InterfaceQueryRow(table, queryField, queryValue string, fields [...]string) (*sql.Row, error) {
   var row *sql.Row
-  queryString := fmt.Sprintf("SELECT %v FROM %v WHERE uuid=$1", strings.Join(fields, ", "), table)
+  queryString := fmt.Sprintf("SELECT %v FROM %v WHERE %v=$1", strings.Join(fields, ", "), table, queryField)
   stmt, err := p.*Driver.Db.Prepare(queryString)
   if err != nil {
     return row, err
   }
   defer DeferredErrCheck(stmt.Close)
-  row = stmt.QueryRow(uuid)
+  row = stmt.QueryRow(queryValue)
   return row, nil
 }
 
-func (p PgOperationInterface) InterfaceQuery(table, uuid string, fields [...]string) (*sql.Rows, error) {
+func (p PgOperationInterface) InterfaceQuery(table, queryField, queryValue string, fields [...]string) (*sql.Rows, error) {
   var rows *sql.Rows
-  queryString := fmt.Sprintf("SELECT %v FROM %v WHERE uuid=$1", strings.Join(fields, ", "), table)
+  queryString := fmt.Sprintf("SELECT %v FROM %v WHERE %v=$1", strings.Join(fields, ", "), table, queryField)
   stmt, err := p.*Driver.Db.Prepare(queryString)
   if err != nil {
     return row, err
   }
   defer DeferredErrCheck(stmt.Close)
-  rows, err = stmt.Query(uuid)
+  rows, err = stmt.Query(queryValue)
   if err != nil {
     return row, err
   }

@@ -271,7 +271,7 @@ func TarUpFilesInGivenDirectories(dirsForFiles []string, inputFiles []map[string
 func FindArtifactUrlsByUuid(uuidToFind string) ([]string, error) {
   var result_urls []string
   var params = [...]string{"results_url"}
-  rows, err := Driver.Query("tests", uuidToFind, params)
+  rows, err := Driver.Query("tests", "uuid", uuidToFind, params)
   if err != nil { // coverage-ignore
     return result_urls, err 
   }

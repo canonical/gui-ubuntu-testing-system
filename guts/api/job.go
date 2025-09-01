@@ -73,7 +73,7 @@ func CollateUuidTestResults(uuidToFind string) (map[string]string, error) {
   testResults := make(map[string]string)
 
   var params = [...]string{"test_case", "state"}
-  rows, err := Driver.Query("tests", uuidToFind, params)
+  rows, err := Driver.Query("tests", "uuid", uuidToFind, params)
   if err != nil { // coverage-ignore
     return testResults, err
   }
@@ -94,7 +94,7 @@ func CollateUuidTestResults(uuidToFind string) (map[string]string, error) {
 func FindJobByUuid(uuidToFind string) (SingleJob, error) {
   var job SingleJob
 
-  row, err := Driver.QueryRow("jobs", uuidToFind, AllJobColumns)
+  rows, err := Driver.QueryRow("tests", "uuid", uuidToFind, AllJobColumns)
   if err != nil { // coverage-ignore
     return job, err
   }
