@@ -14,9 +14,13 @@ func TestParseConfigSuccess(t *testing.T) {
   err := ParseConfig("./guts-api.yaml")
   CheckError(err)
   var wanted GutsApiConfig
+  wanted.Database.Driver = "postgres"
   wanted.Database.ConnectionString = "host=localhost port=5432 user=guts_api password=guts_api dbname=guts sslmode=disable"
   wanted.Api.Hostname = "localhost"
   wanted.Api.Port = 8080
+  wanted.Tarball.TarballCachePath = "/srv/tarball-cache/"
+  wanted.Tarball.TarballCacheMaxSize = 10737418240
+  wanted.Tarball.TarballCacheReductionThreshold = 9663676416
   if !reflect.DeepEqual(GutsCfg, wanted) {
     t.Errorf("Parsed config not the same as wanted config!\nExpected:\n%v\nActual:\n%v", cfg, wanted)
   }

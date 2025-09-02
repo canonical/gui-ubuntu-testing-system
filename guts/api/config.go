@@ -17,9 +17,9 @@ type GutsApiConfig struct {
     Port int `yaml:"port"`
   }
   Tarball struct {
-    TarBallCachePath string `yaml:"tarball_cache_path"`
-    TarBallCacheMaxSize int `yaml:"tarball_cache_max_size"`  // in bytes
-    TarBallCacheReductionThreshold int `yaml:"tarball_cache_reduction_threshold"`  // in bytes
+    TarballCachePath string `yaml:"tarball_cache_path"`
+    TarballCacheMaxSize int `yaml:"tarball_cache_max_size"`  // in bytes
+    TarballCacheReductionThreshold int `yaml:"tarball_cache_reduction_threshold"`  // in bytes
   }
 }
 
