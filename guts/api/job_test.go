@@ -18,7 +18,7 @@ func TestFindJobByUuid(t *testing.T) {
   }
   job, err := FindJobByUuid(Uuid, db)
   CheckError(err)
-  var TestJob SingleJob
+  var TestJob JobEntry
   TestJob.Uuid = "4ce9189f-561a-4886-aeef-1836f28b073b"
   TestJob.ArtifactUrl = nil
   TestJob.TestsRepo = "https://github.com/canonical/ubuntu-gui-testing.git"
@@ -37,7 +37,7 @@ func TestFindJobByUuid(t *testing.T) {
 }
 
 func TestJobToJson(t *testing.T) {
-  var TestJob SingleJob
+  var TestJob JobEntry
   TestJob.Uuid = "4ce9189f-561a-4886-aeef-1836f28b073b"
   TestJob.ArtifactUrl = nil
   TestJob.TestsRepo = "https://github.com/canonical/ubuntu-gui-testing.git"

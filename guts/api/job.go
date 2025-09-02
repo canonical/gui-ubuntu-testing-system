@@ -11,7 +11,7 @@ var (
   AllJobColumns = [...]string{"uuid", "artifact_url", "tests_repo", "tests_repo_branch", "tests_plans", "image_url", "reporter", "status", "submitted_at", "requester", "debug", "priority"}
 )
 
-type SingleJob struct {
+type JobEntry struct {
   Uuid string `json:"uuid"`
   ArtifactUrl *string `json:"artifact_url"`
   TestsRepo string `json:"tests_repo"`
@@ -27,7 +27,7 @@ type SingleJob struct {
 }
 
 type JobWithTestsDetails struct {
-  Job SingleJob
+  Job JobEntry
   Results map[string]string `json:"results"`
 }
 
@@ -35,7 +35,7 @@ type ReturnableJson interface {
   toJson()
 }
 
-func (j SingleJob) toJson() string {
+func (j JobEntry) toJson() string {
   b, err := json.Marshal(j)
   if err != nil { // coverage-ignore
     return ""
@@ -91,8 +91,8 @@ func CollateUuidTestResults(uuidToFind string) (map[string]string, error) {
   return testResults, nil
 }
 
-func FindJobByUuid(uuidToFind string) (SingleJob, error) {
-  var job SingleJob
+func FindJobByUuid(uuidToFind string) (JobEntry, error) {
+  var job JobEntry
 
   rows, err := Driver.QueryRow("tests", "uuid", uuidToFind, AllJobColumns)
   if err != nil { // coverage-ignore
