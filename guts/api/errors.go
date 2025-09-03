@@ -72,3 +72,11 @@ func (p PlanFileNonexistentError) Error() string {
   return fmt.Sprintf("Plan file %v doesn't exist!", p.planFile)
 }
 
+type InvalidArtifactTypeError struct {
+  url string
+}
+
+func (i InvalidArtifactTypeError) Error() string {
+  return fmt.Sprintf("url %v contains an invalid artifact type")
+}
+

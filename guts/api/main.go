@@ -47,6 +47,8 @@ func RequestEndpoint(c *gin.Context) {
       c.IndentedJSON(http.StatusBadRequest, gin.H{"message": err.Error()})
     case: *BadUrlError:
       c.IndentedJSON(http.StatusBadRequest, gin.H{"message": err.Error()})
+    case: *InvalidArtifactTypeError:
+      c.IndentedJSON(http.StatusBadRequest, gin.H{"message": err.Error()})
     case: *NonWhitelistedDomainError:
       c.IndentedJSON(http.StatusForbidden, gin.H{"message": err.Error()})
     case: *GenericGitError:

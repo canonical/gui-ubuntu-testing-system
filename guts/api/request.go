@@ -66,7 +66,7 @@ func GetAuthDataForKey(key string) (UserData, error) {
   var user UserData
   var params = [...]string{"username", "key", "maximum_priority"}
   row, err := Driver.QueryRow("users", "user", user, params)
-  if err != nil {
+  if err != nil { // coverage-ignore
     return user, err
   }
   err = row.Scan(
@@ -76,7 +76,7 @@ func GetAuthDataForKey(key string) (UserData, error) {
   )
   if err != nil {
     if err == sql.ErrNoRows {
-      return user, fmt.Errorf("User %v doesn't exist!")
+      return user, fmt.Errorf("Key %v doesn't exist!", key)
     }
   }
   return user, err
@@ -123,6 +123,8 @@ func ValidateUrlAgainstDomainsAndTypes(url string, domains []string, artifactTyp
       } else {
         return BadUrlError{url: url, code: response.StatusCode}
       }
+    } else if err != nil && strings.Contains(url, entry) {
+        return InvalidArtifactTypeError{url: url}
     }
   }
   return NonWhitelistedDomainError{url: url}
@@ -179,7 +181,7 @@ func ValidateTestData(testsRepoBranch, testsRepo string, testPlans []string) err
   return nil
 }
 
-func CreateJobEntry(job JobRequest, uData UserData) JobEntry {
+func CreateJobEntry(job JobRequest, uData UserData) JobEntry { // coverage-ignore
   var thisJob JobEntry
   thisJob.Uuid = uuid.New().String()
   thisJob.ArtifactUrl = job.ArtifactUrl

@@ -53,3 +53,18 @@ func TestCheckStringIsAlphanumericFails(t *testing.T) {
   }
 }
 
+func InitTestPgSkippableReady() (bool, error) {
+  ParseArgs()
+  err := ParseConfig(configFilePath)
+  if err != nil {
+    CheckError(err)
+  }
+  Driver, err = NewDbDriver(GutsApiConfig)
+  if SkipTestIfPostgresInactive(err) {
+    return false, "Skipping test as postgresql service is not up"
+  } else {
+    CheckError(err)
+  }
+  return true, nil
+}
+
