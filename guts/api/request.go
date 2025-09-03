@@ -65,7 +65,7 @@ func ProcessJobRequest(apiKey string, jobReq JobRequest) (string, error) {
 func GetAuthDataForKey(key string) (UserData, error) {
   var user UserData
   var params = [...]string{"username", "key", "maximum_priority"}
-  row, err := Driver.QueryRow("users", user, params)
+  row, err := Driver.QueryRow("users", "user", user, params)
   if err != nil {
     return user, err
   }
