@@ -1,0 +1,14 @@
+database:
+  # for postgres
+  driver: "postgres"  # https://go.dev/wiki/SQLDrivers
+  connection_string: "host=localhost port=5432 user=guts_api password=guts_api dbname=guts sslmode=disable"
+  # for sqlite
+  # driver: "sqlite"
+  # connection_string: "/path/to/sqlite.db"
+api:
+  hostname: "localhost"
+  port: 8080
+tarball:
+  tarball_cache_path: /srv/tarball-cache/
+  tarball_cache_max_size: 10737418240
+  tarball_cache_reduction_threshold: 9663676416
