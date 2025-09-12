@@ -1,7 +1,23 @@
 -- create db
+
 CREATE DATABASE guts;
 
 \c guts;
+
+DROP TABLE IF EXISTS currtztable;
+
+SELECT current_setting('TIMEZONE') INTO currtztable;
+
+DO
+$do$
+BEGIN
+    IF (SELECT count(*) = 0 FROM currtztable WHERE current_setting='UTC') THEN
+        ALTER DATABASE guts SET timezone TO 'UTC';
+    END IF;
+END
+$do$;
+
+DROP TABLE IF EXISTS currtztable;
 
 -- create tables
 CREATE TABLE IF NOT EXISTS jobs (
