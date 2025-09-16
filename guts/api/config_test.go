@@ -19,6 +19,12 @@ func TestParseConfigSuccess(t *testing.T) {
 	wanted.Database.ConnectionString = "host=localhost port=5432 user=guts_api password=guts_api dbname=guts sslmode=disable"
 	wanted.Api.Hostname = "localhost"
 	wanted.Api.Port = 8080
+	domains := []string{"launchpad.net", "localhost:9999"}
+	wanted.Api.ArtifactDomains = domains
+	domains = []string{"cdimage.ubuntu.com", "releases.ubuntu.com", "localhost:9999"}
+	wanted.Api.TestbedDomains = domains
+	domains = []string{"git.launchpad.net", "github.com"}
+	wanted.Api.GitDomains = domains
 	wanted.Tarball.TarballCachePath = "/srv/tarball-cache/"
 	wanted.Tarball.TarballCacheMaxSize = 10737418240
 	wanted.Tarball.TarballCacheReductionThreshold = 9663676416

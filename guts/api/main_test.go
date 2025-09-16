@@ -9,6 +9,7 @@ import (
 	"os"
 	"os/exec"
 	"reflect"
+	"strings"
 	"testing"
 	"time"
 )
@@ -135,5 +136,196 @@ func TestArtifactsEndpointInvalidUuid(t *testing.T) {
 
 	if !reflect.DeepEqual(w.Code, expectedCode) {
 		t.Errorf("Unexpected exit code!\nExpected: %v\nActual: %v", expectedCode, w.Code)
+	}
+}
+
+func CreateAcceptableJobRequest() JobRequest {
+	var req JobRequest
+	myString := "https://launchpad.net/ubuntu/+archive/primary/+files/hello_2.10-5_amd64.deb"
+	req.ArtifactUrl = &myString
+	req.TestsRepo = "https://github.com/canonical/ubuntu-gui-testing.git"
+	req.TestsRepoBranch = "main"
+	req.TestsPlans = []string{"tests/firefox-example/plans/regular.yaml", "tests/firefox-example/plans/extended.yaml"}
+	req.TestBed = "https://releases.ubuntu.com/noble/ubuntu-24.04.3-desktop-amd64.iso"
+	req.Debug = false
+	req.Priority = 9
+	req.Reporter = ""
+	return req
+}
+
+func TestRequestEndpointSuccess(t *testing.T) {
+	request := CreateAcceptableJobRequest()
+
+	r := SetUpRouter()
+	r.POST("/request/", RequestEndpoint)
+
+	reqFound, _ := http.NewRequest("POST", "/request/", strings.NewReader(request.toJson()))
+	reqFound.Header.Add("X-Api-Key", "4c126f75-c7d8-4a89-9370-f065e7ff4208")
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, reqFound)
+
+	expectedCode := 200
+	if w.Code != expectedCode {
+		t.Errorf("wtf! code is expected to be %v but is actually %v, and response string is:\n%v", expectedCode, w.Code, w.Body.String())
+	}
+}
+
+func TestRequestEndpointBadJson(t *testing.T) {
+	r := SetUpRouter()
+	r.POST("/request/", RequestEndpoint)
+
+	reqFound, _ := http.NewRequest("POST", "/request/", strings.NewReader("asdf"))
+	reqFound.Header.Add("X-Api-Key", "4c126f75-c7d8-4a89-9370-f065e7ff4208")
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, reqFound)
+
+	expectedCode := 400
+	if w.Code != expectedCode {
+		t.Errorf("wtf! code is expected to be %v but is actually %v, and response string is:\n%v", expectedCode, w.Code, w.Body.String())
+	}
+}
+
+func TestRequestEndpointEmptyApiKey(t *testing.T) {
+	request := CreateAcceptableJobRequest()
+
+	r := SetUpRouter()
+	r.POST("/request/", RequestEndpoint)
+
+	reqFound, _ := http.NewRequest("POST", "/request/", strings.NewReader(request.toJson()))
+	reqFound.Header.Add("X-Api-Key", "")
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, reqFound)
+
+	expectedCode := 401
+	if w.Code != expectedCode {
+		t.Errorf("wtf! code is expected to be %v but is actually %v, and response string is:\n%v", expectedCode, w.Code, w.Body.String())
+	}
+}
+
+func TestRequestEndpointUnauthorizedApiKey(t *testing.T) {
+	request := CreateAcceptableJobRequest()
+
+	r := SetUpRouter()
+	r.POST("/request/", RequestEndpoint)
+
+	reqFound, _ := http.NewRequest("POST", "/request/", strings.NewReader(request.toJson()))
+	reqFound.Header.Add("X-Api-Key", "asdf")
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, reqFound)
+
+	expectedCode := 401
+	if w.Code != expectedCode {
+		t.Errorf("wtf! code is expected to be %v but is actually %v, and response string is:\n%v", expectedCode, w.Code, w.Body.String())
+	}
+}
+
+func TestRequestEndpointBadUrlError(t *testing.T) {
+	request := CreateAcceptableJobRequest()
+	myString := "https://launchpad.net/ubuntu/+archive/primary/+files/dingus_2.10-5_amd64.deb"
+	request.ArtifactUrl = &myString
+
+	r := SetUpRouter()
+	r.POST("/request/", RequestEndpoint)
+
+	reqFound, _ := http.NewRequest("POST", "/request/", strings.NewReader(request.toJson()))
+	reqFound.Header.Add("X-Api-Key", "4c126f75-c7d8-4a89-9370-f065e7ff4208")
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, reqFound)
+
+	expectedCode := 400
+	if w.Code != expectedCode {
+		t.Errorf("wtf! code is expected to be %v but is actually %v, and response string is:\n%v", expectedCode, w.Code, w.Body.String())
+	}
+}
+
+func TestRequestEndpointInvalidArtifactType(t *testing.T) {
+	request := CreateAcceptableJobRequest()
+	myString := "https://launchpad.net/ubuntu/+archive/primary/+files/hello_2.10-5_amd64.rpm"
+	request.ArtifactUrl = &myString
+
+	r := SetUpRouter()
+	r.POST("/request/", RequestEndpoint)
+
+	reqFound, _ := http.NewRequest("POST", "/request/", strings.NewReader(request.toJson()))
+	reqFound.Header.Add("X-Api-Key", "4c126f75-c7d8-4a89-9370-f065e7ff4208")
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, reqFound)
+
+	expectedCode := 400
+	if w.Code != expectedCode {
+		t.Errorf("wtf! code is expected to be %v but is actually %v, and response string is:\n%v", expectedCode, w.Code, w.Body.String())
+	}
+}
+
+func TestRequestEndpointBadArtifactDomain(t *testing.T) {
+	request := CreateAcceptableJobRequest()
+	myString := "https://momcorp.com/ubuntu/+archive/primary/+files/hello_2.10-5_amd64.deb"
+	request.ArtifactUrl = &myString
+
+	r := SetUpRouter()
+	r.POST("/request/", RequestEndpoint)
+
+	reqFound, _ := http.NewRequest("POST", "/request/", strings.NewReader(request.toJson()))
+	reqFound.Header.Add("X-Api-Key", "4c126f75-c7d8-4a89-9370-f065e7ff4208")
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, reqFound)
+
+	expectedCode := 403
+	if w.Code != expectedCode {
+		t.Errorf("wtf! code is expected to be %v but is actually %v, and response string is:\n%v", expectedCode, w.Code, w.Body.String())
+	}
+}
+
+func TestRequestEndpointBadTestbedUrl(t *testing.T) {
+	request := CreateAcceptableJobRequest()
+	request.TestBed = "https://releases.ubuntu.com/24.04.3/ubuntu-24.04.3-besktop-amd64.iso"
+
+	r := SetUpRouter()
+	r.POST("/request/", RequestEndpoint)
+
+	reqFound, _ := http.NewRequest("POST", "/request/", strings.NewReader(request.toJson()))
+	reqFound.Header.Add("X-Api-Key", "4c126f75-c7d8-4a89-9370-f065e7ff4208")
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, reqFound)
+
+	expectedCode := 400
+	if w.Code != expectedCode {
+		t.Errorf("wtf! code is expected to be %v but is actually %v, and response string is:\n%v", expectedCode, w.Code, w.Body.String())
+	}
+}
+
+func TestRequestEndpointGitError(t *testing.T) {
+	request := CreateAcceptableJobRequest()
+	request.TestsRepo = "https://github.com/momcorp-bending-unit-ocr.git"
+
+	r := SetUpRouter()
+	r.POST("/request/", RequestEndpoint)
+
+	reqFound, _ := http.NewRequest("POST", "/request/", strings.NewReader(request.toJson()))
+	reqFound.Header.Add("X-Api-Key", "4c126f75-c7d8-4a89-9370-f065e7ff4208")
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, reqFound)
+
+	expectedCode := 400
+	if w.Code != expectedCode {
+		t.Errorf("wtf! code is expected to be %v but is actually %v, and response string is:\n%v", expectedCode, w.Code, w.Body.String())
+	}
+}
+
+func TestRequestEndpointBadPlanFile(t *testing.T) {
+	request := CreateAcceptableJobRequest()
+	request.TestsPlans = []string{"non/existant/plan.yaml"}
+
+	r := SetUpRouter()
+	r.POST("/request/", RequestEndpoint)
+
+	reqFound, _ := http.NewRequest("POST", "/request/", strings.NewReader(request.toJson()))
+	reqFound.Header.Add("X-Api-Key", "4c126f75-c7d8-4a89-9370-f065e7ff4208")
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, reqFound)
+
+	expectedCode := 400
+	if w.Code != expectedCode {
+		t.Errorf("wtf! code is expected to be %v but is actually %v, and response string is:\n%v", expectedCode, w.Code, w.Body.String())
 	}
 }

@@ -8,6 +8,16 @@ database:
 api:
   hostname: "localhost"
   port: 8080
+  artifact_domains:
+    - launchpad.net
+    - localhost:9999
+  testbed_domains:
+    - cdimage.ubuntu.com
+    - releases.ubuntu.com
+    - localhost:9999
+  git_domains:
+    - git.launchpad.net
+    - github.com
 tarball:
   tarball_cache_path: /srv/tarball-cache/
   tarball_cache_max_size: 10737418240

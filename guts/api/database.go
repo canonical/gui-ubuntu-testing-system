@@ -75,6 +75,11 @@ func (d DbDriver) Query(table, queryField, queryValue string, fields []string) (
 	return rows, err
 }
 
+func (d DbDriver) InsertJobsRow(job JobEntry) error {
+	err := d.Interface.InterfaceInsertJobsRow(job)
+	return err
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 // section with interfaces and functionality for different engines
 
@@ -82,6 +87,7 @@ type DbOperationInterface interface {
 	DbAvailable() error
 	InterfaceQueryRow(table, queryField, queryValue string, fields []string) (*sql.Row, error)
 	InterfaceQuery(table, queryField, queryValue string, fields []string) (*sql.Rows, error)
+	InterfaceInsertJobsRow(job JobEntry) error
 }
 
 type PgOperationInterface struct {
@@ -126,4 +132,31 @@ func (p PgOperationInterface) InterfaceQuery(table, queryField, queryValue strin
 		return rows, err
 	}
 	return rows, err
+}
+
+func (p PgOperationInterface) InterfaceInsertJobsRow(job JobEntry) error {
+	queryString := fmt.Sprintf(
+		`INSERT INTO jobs (%v) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)`,
+		strings.Join(AllJobColumns, ", "),
+	)
+	stmt, err := p.Db.Prepare(queryString)
+	if err != nil { // coverage-ignore
+		return err
+	}
+	defer DeferredErrCheck(stmt.Close)
+	_, err = stmt.Exec(
+		job.Uuid,
+		job.ArtifactUrl,
+		job.TestsRepo,
+		job.TestsRepoBranch,
+		fmt.Sprintf(`{%v}`, strings.Join(job.TestsPlans, ",")),
+		job.ImageUrl,
+		job.Reporter,
+		job.Status,
+		job.SubmittedAt,
+		job.Requester,
+		job.Debug,
+		job.Priority,
+	)
+	return err
 }

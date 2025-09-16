@@ -1,6 +1,8 @@
 package main
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
 	"fmt"
 	"io"
 	"net/http"
@@ -101,4 +103,26 @@ func DownloadFile(url string) ([]byte, error) {
 		return b, fmt.Errorf("file at %v is empty", url)
 	}
 	return b, nil
+}
+
+func Sha256sumOfString(inputString string) string {
+	hasher := sha256.New()
+	hasher.Write([]byte(inputString))
+	return hex.EncodeToString(hasher.Sum(nil))
+}
+
+func GetStatusUrlForUuid(uuid string) string {
+	statusUrl := fmt.Sprintf("%v%v/status/%v", GetProtocolPrefix(), GutsCfg.Api.Hostname, uuid)
+	return statusUrl
+}
+
+func GetProtocolPrefix() string {
+	switch GutsCfg.Api.Port {
+	default:
+		return ""
+	case 8080:
+		return "http://"
+	case 443:
+		return "https://"
+	}
 }

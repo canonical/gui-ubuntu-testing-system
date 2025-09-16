@@ -12,8 +12,11 @@ type GutsApiConfig struct {
 		ConnectionString string `yaml:"connection_string"`
 	}
 	Api struct {
-		Hostname string `yaml:"hostname"`
-		Port     int    `yaml:"port"`
+		Hostname        string   `yaml:"hostname"`
+		Port            int      `yaml:"port"`
+		ArtifactDomains []string `yaml:"artifact_domains"`
+		TestbedDomains  []string `yaml:"testbed_domains"`
+		GitDomains      []string `yaml:"git_domains"`
 	}
 	Tarball struct {
 		TarballCachePath               string `yaml:"tarball_cache_path"`

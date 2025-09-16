@@ -98,3 +98,27 @@ func TestDownloadFileEmpty(t *testing.T) {
 		t.Errorf("Unexpected err string!\nExpected: %v\nActual: %v", expectedErrString, err.Error())
 	}
 }
+
+func TestGetProtocolPrefix(t *testing.T) {
+	ParseArgs()
+	err := ParseConfig(configFilePath)
+	CheckError(err)
+	GutsCfg.Api.Port = 8080
+	expectedReturn := "http://"
+	if expectedReturn != GetProtocolPrefix() {
+		t.Errorf("%v is expected for port %v", expectedReturn, GutsCfg.Api.Port)
+	}
+	GutsCfg.Api.Port = 443
+	expectedReturn = "https://"
+	if expectedReturn != GetProtocolPrefix() {
+		t.Errorf("%v is expected for port %v", expectedReturn, GutsCfg.Api.Port)
+	}
+	GutsCfg.Api.Port = 123
+	expectedReturn = ""
+	if expectedReturn != GetProtocolPrefix() {
+		t.Errorf("%v is expected for port %v", expectedReturn, GutsCfg.Api.Port)
+	}
+	ParseArgs()
+	err = ParseConfig(configFilePath)
+	CheckError(err)
+}

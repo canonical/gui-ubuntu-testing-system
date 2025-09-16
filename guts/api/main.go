@@ -7,10 +7,6 @@ import (
 	"net/http"
 )
 
-// var (
-//   Driver DbDriver
-// )
-
 func CheckError(err error) { // coverage-ignore
 	if err != nil {
 		log.Fatal(err.Error())
@@ -25,6 +21,38 @@ func DeferredErrCheck(f func() error) {
 func DeferredErrCheckStringArg(f func(s string) error, s string) {
 	err := f(s)
 	CheckError(err)
+}
+
+func RequestEndpoint(c *gin.Context) {
+	bareKey := c.GetHeader("X-Api-Key")
+	var jobReq JobRequest
+	if err := c.BindJSON(&jobReq); err != nil {
+		c.IndentedJSON(http.StatusBadRequest, gin.H{"message": fmt.Sprintf("Internal server error:\n%v", err.Error())})
+		return
+	}
+	retJson, err := ProcessJobRequest(bareKey, jobReq)
+	if err != nil {
+		switch t := err.(type) {
+		default: // coverage-ignore
+			c.IndentedJSON(http.StatusInternalServerError, gin.H{"message": fmt.Sprintf("Internal server error of type %v:\n%v", t, err.Error())})
+		case EmptyApiKeyError:
+			c.IndentedJSON(http.StatusUnauthorized, gin.H{"message": err.Error()})
+		case ApiKeyNotAcceptedError:
+			c.IndentedJSON(http.StatusUnauthorized, gin.H{"message": err.Error()})
+		case BadUrlError:
+			c.IndentedJSON(http.StatusBadRequest, gin.H{"message": err.Error()})
+		case InvalidArtifactTypeError:
+			c.IndentedJSON(http.StatusBadRequest, gin.H{"message": err.Error()})
+		case NonWhitelistedDomainError:
+			c.IndentedJSON(http.StatusForbidden, gin.H{"message": err.Error()})
+		case GenericGitError:
+			c.IndentedJSON(http.StatusBadRequest, gin.H{"message": err.Error()})
+		case PlanFileNonexistentError:
+			c.IndentedJSON(http.StatusBadRequest, gin.H{"message": err.Error()})
+		}
+		return
+	}
+	c.IndentedJSON(http.StatusOK, retJson)
 }
 
 func JobEndpoint(c *gin.Context) {
@@ -73,6 +101,7 @@ func main() { // coverage-ignore
 	router := gin.Default()
 	router.GET("/job/:uuid", JobEndpoint)
 	router.GET("/artifacts/:uuid/results.tar.gz", ArtifactsEndpoint)
+	router.POST("/request/", RequestEndpoint)
 	router_address := fmt.Sprintf("%v:%v", GutsCfg.Api.Hostname, GutsCfg.Api.Port)
 	err = router.Run(router_address)
 	CheckError(err)
