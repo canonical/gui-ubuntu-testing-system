@@ -30,6 +30,7 @@ ALTER USER guts_api WITH LOGIN;
 
 -- spawner permissions
 GRANT SELECT, UPDATE ON tests TO guts_spawner;
+GRANT SELECT ON jobs TO guts_spawner;
 ALTER USER guts_spawner WITH LOGIN;
 
 -- scheduler permissions
