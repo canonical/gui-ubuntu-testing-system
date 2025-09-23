@@ -1,4 +1,4 @@
-package main
+package api
 
 import (
 	"fmt"
@@ -10,20 +10,6 @@ type UuidNotFoundError struct {
 
 func (e UuidNotFoundError) Error() string {
 	return fmt.Sprintf("No jobs with uuid %v found!", e.uuid)
-}
-
-type InvalidUuidError struct {
-	uuid string
-}
-
-func (e InvalidUuidError) Error() string {
-	return fmt.Sprintf("%v isn't a valid uuid!", e.uuid)
-}
-
-type PostgresServiceNotUpError struct{}
-
-func (e PostgresServiceNotUpError) Error() string {
-	return "Unit postgresql.service is not active."
 }
 
 type BadUrlError struct {

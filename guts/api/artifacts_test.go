@@ -1,10 +1,12 @@
-package main
+package api
 
 import (
 	"crypto/rand"
 	"errors"
 	"fmt"
 	"github.com/google/uuid"
+	"guts.ubuntu.com/v2/database"
+	"guts.ubuntu.com/v2/utils"
 	"os"
 	"os/exec"
 	"reflect"
@@ -15,16 +17,14 @@ import (
 
 func TestFindArtifactUrlsByUuid(t *testing.T) {
 	Uuid := "eccd3988-490d-4414-be97-605d1ac81073"
-	err := ParseConfig("./guts-api.yaml")
-	CheckError(err)
-	err = Setup()
-	if SkipTestIfPostgresInactive(err) {
+	_, Driver, _, err := Setup()
+	if database.SkipTestIfPostgresInactive(err) {
 		t.Skip("Skipping test as postgresql service is not up")
 	} else {
-		CheckError(err)
+		utils.CheckError(err)
 	}
-	result_urls, err := FindArtifactUrlsByUuid(Uuid)
-	CheckError(err)
+	result_urls, err := FindArtifactUrlsByUuid(Uuid, Driver)
+	utils.CheckError(err)
 	expectedUrls := make([]string, 3)
 	expectedUrls[0] = "https://guts.ubuntu.com/artifacts/eccd3988-490d-4414-be97-605d1ac81073/"
 	expectedUrls[1] = "https://guts.ubuntu.com/artifacts/eccd3988-490d-4414-be97-605d1ac81073/"
@@ -36,35 +36,31 @@ func TestFindArtifactUrlsByUuid(t *testing.T) {
 }
 
 func TestCollateArtifacts(t *testing.T) {
-	ServeDirectory()
+	utils.ServeDirectory("/../../postgres/test-data/test-files/")
 
 	// Get output artifacts for given uuid
 	Uuid := "27549483-e8f5-497f-a05d-e6d8e67a8e8a"
-	err := ParseConfig("./guts-api.yaml")
-	CheckError(err)
-	err = Setup()
-	if SkipTestIfPostgresInactive(err) {
+	GutsCfg, Driver, _, err := Setup()
+	if database.SkipTestIfPostgresInactive(err) {
 		t.Skip("Skipping test as postgresql service is not up")
 	} else {
-		CheckError(err)
+		utils.CheckError(err)
 	}
-	artifactsTarGz, err := CollateArtifacts(Uuid)
-	CheckError(err)
+	artifactsTarGz, err := CollateArtifacts(Uuid, Driver, GutsCfg)
+	utils.CheckError(err)
 
 	// Write the tar to a file
 	tempTarName := "/tmp/test-tar.tar.gz"
 	err = os.WriteFile(tempTarName, artifactsTarGz, 0644)
-	CheckError(err)
-	// defer os.Remove(tempTarName)
+	utils.CheckError(err)
 
 	if _, err := os.Stat(tempTarName); errors.Is(err, os.ErrNotExist) {
 		t.Errorf("Couldn't write tarfile: %v", tempTarName)
-		// path/to/whatever does not exist
 	}
 
 	// Get the list of files included in the tar
 	out, err := exec.Command("tar", "ztf", tempTarName).Output()
-	CheckError(err)
+	utils.CheckError(err)
 	tarFiles := strings.Split(string(out), "\n")
 
 	// Create the expected list of files
@@ -93,15 +89,13 @@ func TestCollateArtifacts(t *testing.T) {
 
 func TestCollateArtifactsDownloadFails(t *testing.T) {
 	Uuid := "44eea936-1e4a-4e20-b25d-ab0df9978ada"
-	err := ParseConfig("./guts-api.yaml")
-	CheckError(err)
-	err = Setup()
-	if SkipTestIfPostgresInactive(err) {
+	GutsCfg, Driver, _, err := Setup()
+	if database.SkipTestIfPostgresInactive(err) {
 		t.Skip("Skipping test as postgresql service is not up")
 	} else {
-		CheckError(err)
+		utils.CheckError(err)
 	}
-	artifactsTarGz, err := CollateArtifacts(Uuid)
+	artifactsTarGz, err := CollateArtifacts(Uuid, Driver, GutsCfg)
 	if len(artifactsTarGz) != 0 {
 		t.Errorf("Variable should have length 0 but instead has length %v", len(artifactsTarGz))
 	}
@@ -123,7 +117,7 @@ func TestCreateOutputDirectoriesFromUrls(t *testing.T) {
 		"res-3",
 	}
 	directoryNames, err := CreateOutputDirectoriesFromUrls(artifactUrls)
-	CheckError(err)
+	utils.CheckError(err)
 
 	if !reflect.DeepEqual(expectedDirNames, directoryNames) {
 		t.Errorf("Expected directory names not the same as actual!\nExpected: %v\nActual: %v", expectedDirNames, directoryNames)
@@ -132,14 +126,14 @@ func TestCreateOutputDirectoriesFromUrls(t *testing.T) {
 }
 
 func TestDownloadTarFiles(t *testing.T) {
-	ServeDirectory()
+	utils.ServeDirectory("/../../postgres/test-data/test-files/")
 	artifactUrls := []string{
 		"http://localhost:9999/res-1.tar.gz",
 		"http://localhost:9999/res-2.tar.gz",
 		"http://localhost:9999/res-3.tar.gz",
 	}
 	_, err := DownloadTarFiles(artifactUrls)
-	CheckError(err)
+	utils.CheckError(err)
 }
 
 func TestCreateOutputDirectoriesFromUrlsEmptyUrls(t *testing.T) {
@@ -194,15 +188,13 @@ func TestTarUpFilesInGivenDirectoriesInputValidation(t *testing.T) {
 
 func TestFindArtifactUrlsByUuidFails(t *testing.T) {
 	Uuid := "?"
-	err := ParseConfig("./guts-api.yaml")
-	CheckError(err)
-	err = Setup()
-	if SkipTestIfPostgresInactive(err) {
+	_, Driver, _, err := Setup()
+	if database.SkipTestIfPostgresInactive(err) {
 		t.Skip("Skipping test as postgresql service is not up")
 	} else {
-		CheckError(err)
+		utils.CheckError(err)
 	}
-	_, err = FindArtifactUrlsByUuid(Uuid)
+	_, err = FindArtifactUrlsByUuid(Uuid, Driver)
 	expectedErrString := "No jobs with uuid ? found!"
 	if !reflect.DeepEqual(err.Error(), expectedErrString) {
 		t.Errorf("Unexpected err string!\nExpected: %v\nActual: %v", expectedErrString, err.Error())
@@ -211,14 +203,38 @@ func TestFindArtifactUrlsByUuidFails(t *testing.T) {
 
 func TestCacheRetentionPolicyDirNoExist(t *testing.T) {
 	fakeDir := "/srv/this-dir-noexist"
-	err := CacheRetentionPolicy(fakeDir)
+	gutsCfg, _, _, err := Setup()
+	utils.CheckError(err)
+	err = CacheRetentionPolicy(fakeDir, gutsCfg.Tarball.TarballCacheReductionThreshold, gutsCfg.Tarball.TarballCacheMaxSize)
 	if err == nil {
 		t.Errorf("The cache retention policy didn't fail for a non-existent directory: %v", fakeDir)
+	}
+}
 
+func TestCacheRetentionPolicyAlreadySmallEnough(t *testing.T) {
+	GutsCfg, _, _, err := Setup()
+	utils.CheckError(err)
+
+	cfgWithSmallLimit := GutsCfg
+	cfgWithSmallLimit.Tarball.TarballCacheMaxSize = 1000
+	cfgWithSmallLimit.Tarball.TarballCacheReductionThreshold = 900
+	cfgWithSmallLimit.Tarball.TarballCachePath = "/srv/dummy-cache/"
+	// create the cache dir
+	err = utils.CreateDirIfNotExists(cfgWithSmallLimit.Tarball.TarballCachePath)
+	utils.CheckError(err)
+	// Populate the cache until above the MaxSize
+	err = PopulateCacheDummyData(cfgWithSmallLimit)
+	utils.CheckError(err)
+	// Run the CacheRetentionPolicy
+	err = CacheRetentionPolicy(GutsCfg.Tarball.TarballCachePath, GutsCfg.Tarball.TarballCacheReductionThreshold, GutsCfg.Tarball.TarballCacheMaxSize)
+	if err != nil {
+		t.Errorf("Cache retention policy should have done nothing and exited with nil err")
 	}
 }
 
 func TestCacheRetentionPolicySuccess(t *testing.T) {
+	GutsCfg, _, _, err := Setup()
+	utils.CheckError(err)
 	// Set necessary variables for a small cache
 	savedCacheMaxSize := GutsCfg.Tarball.TarballCacheMaxSize
 	savedCacheReductionThreshold := GutsCfg.Tarball.TarballCacheReductionThreshold
@@ -227,36 +243,36 @@ func TestCacheRetentionPolicySuccess(t *testing.T) {
 	GutsCfg.Tarball.TarballCacheReductionThreshold = 90000
 	GutsCfg.Tarball.TarballCachePath = "/srv/dummy-cache/"
 	// create the cache dir
-	err := CreateDirIfNotExists(GutsCfg.Tarball.TarballCachePath)
-	CheckError(err)
+	err = utils.CreateDirIfNotExists(GutsCfg.Tarball.TarballCachePath)
+	utils.CheckError(err)
 	// Populate the cache until above the MaxSize
-	err = PopulateCacheDummyData(GutsCfg.Tarball.TarballCacheMaxSize)
-	CheckError(err)
-	dirSize, err := GetDirSize(GutsCfg.Tarball.TarballCachePath)
-	CheckError(err)
+	err = PopulateCacheDummyData(GutsCfg)
+	utils.CheckError(err)
+	dirSize, err := utils.GetDirSize(GutsCfg.Tarball.TarballCachePath)
+	utils.CheckError(err)
 	if dirSize < GutsCfg.Tarball.TarballCacheMaxSize {
 		t.Errorf("Dirsize %v should be greater than %v", dirSize, GutsCfg.Tarball.TarballCacheMaxSize)
 	}
 	// Run the CacheRetentionPolicy
-	err = CacheRetentionPolicy(GutsCfg.Tarball.TarballCachePath)
-	CheckError(err)
-	dirSize, err = GetDirSize(GutsCfg.Tarball.TarballCachePath)
-	CheckError(err)
+	err = CacheRetentionPolicy(GutsCfg.Tarball.TarballCachePath, GutsCfg.Tarball.TarballCacheReductionThreshold, GutsCfg.Tarball.TarballCacheMaxSize)
+	utils.CheckError(err)
+	dirSize, err = utils.GetDirSize(GutsCfg.Tarball.TarballCachePath)
+	utils.CheckError(err)
 	if dirSize > GutsCfg.Tarball.TarballCacheMaxSize {
 		t.Errorf("Dirsize %v should be less than %v", dirSize, GutsCfg.Tarball.TarballCacheMaxSize)
 	}
 	// remove the cache-dir
 	err = os.RemoveAll(GutsCfg.Tarball.TarballCachePath)
-	CheckError(err)
+	utils.CheckError(err)
 	// Set necessary variables back
 	GutsCfg.Tarball.TarballCacheMaxSize = savedCacheMaxSize
 	GutsCfg.Tarball.TarballCacheReductionThreshold = savedCacheReductionThreshold
 	GutsCfg.Tarball.TarballCachePath = savedCachePath
 }
 
-func PopulateCacheDummyData(threshold int) error {
+func PopulateCacheDummyData(GutsCfg GutsApiConfig) error {
 	dirSize := 0
-	for dirSize < threshold {
+	for dirSize < GutsCfg.Tarball.TarballCacheMaxSize {
 		thisUuid := uuid.New().String()
 		thisDir := fmt.Sprintf("%v%v", GutsCfg.Tarball.TarballCachePath, thisUuid)
 		err := os.Mkdir(thisDir, 0755)
@@ -265,10 +281,10 @@ func PopulateCacheDummyData(threshold int) error {
 		}
 		tarball := make([]byte, 999)
 		_, err = rand.Read(tarball)
-		CheckError(err)
+		utils.CheckError(err)
 		err = WriteTarballToCache(tarball, thisUuid, thisDir, fmt.Sprintf("%v/results.tar.gz", thisDir), fmt.Sprintf("%v/%v.last_downloaded", thisDir, thisUuid))
-		CheckError(err)
-		dirSize, err = GetDirSize(GutsCfg.Tarball.TarballCachePath)
+		utils.CheckError(err)
+		dirSize, err = utils.GetDirSize(GutsCfg.Tarball.TarballCachePath)
 		if err != nil {
 			return err
 		}
@@ -277,24 +293,26 @@ func PopulateCacheDummyData(threshold int) error {
 }
 
 func TestWriteTarballToCacheAlreadyExists(t *testing.T) {
+	GutsCfg, _, _, err := Setup()
+	utils.CheckError(err)
 	thisUuid := uuid.New().String()
 	thisDir := fmt.Sprintf("%v%v", GutsCfg.Tarball.TarballCachePath, thisUuid)
-	err := os.Mkdir(thisDir, 0755)
-	CheckError(err)
+	err = os.Mkdir(thisDir, 0755)
+	utils.CheckError(err)
 	tarball := make([]byte, 999)
 	_, err = rand.Read(tarball)
-	CheckError(err)
+	utils.CheckError(err)
 	err = WriteTarballToCache(tarball, thisUuid, thisDir, fmt.Sprintf("%v/results.tar.gz", thisDir), fmt.Sprintf("%v/%v.last_downloaded", thisDir, thisUuid))
-	CheckError(err)
+	utils.CheckError(err)
 	// okay, now it's written ... run again and ensure no failure?
 	err = WriteTarballToCache(tarball, thisUuid, thisDir, fmt.Sprintf("%v/results.tar.gz", thisDir), fmt.Sprintf("%v/%v.last_downloaded", thisDir, thisUuid))
-	CheckError(err)
+	utils.CheckError(err)
 }
 
 func TestGzipTarArchiveBytes(t *testing.T) {
 	myBytes := []byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10}
 	compressedBytes, err := GzipTarArchiveBytes(myBytes)
-	CheckError(err)
+	utils.CheckError(err)
 	targetBytes := []byte{31, 139, 8, 0, 0, 0, 0, 0, 0, 255, 98, 100, 98, 102, 97, 101, 99, 231, 224, 228, 2, 4, 0, 0, 255, 255, 123, 87, 32, 37, 10, 0, 0, 0}
 	if !reflect.DeepEqual(compressedBytes, targetBytes) {
 		t.Errorf("Unexpected output bytes after gzip compression!\nExpected: %v\nActual: %v", targetBytes, compressedBytes)
@@ -311,29 +329,29 @@ func TestTarUpFilesInGivenDirectories(t *testing.T) {
 	mapFiles := make(map[string][]byte)
 	mapFiles["file1"] = make([]byte, 99)
 	_, err := rand.Read(mapFiles["file1"])
-	CheckError(err)
+	utils.CheckError(err)
 	mapFiles["file2"] = make([]byte, 99)
 	_, err = rand.Read(mapFiles["file2"])
-	CheckError(err)
+	utils.CheckError(err)
 	mapFiles["file3"] = make([]byte, 99)
 	_, err = rand.Read(mapFiles["file3"])
-	CheckError(err)
+	utils.CheckError(err)
 	// Insert map into slice
 	myMap[0] = mapFiles
 	myMap[1] = mapFiles
 	myMap[2] = mapFiles
 	// Tar up the files
 	tarBytes, err := TarUpFilesInGivenDirectories(fileDirs, myMap)
-	CheckError(err)
+	utils.CheckError(err)
 	// write to a tempfile
 	f, err := os.CreateTemp("", "tarfile")
-	CheckError(err)
-	defer DeferredErrCheckStringArg(os.Remove, f.Name())
+	utils.CheckError(err)
+	defer utils.DeferredErrCheckStringArg(os.Remove, f.Name())
 	_, err = f.Write(tarBytes)
-	CheckError(err)
+	utils.CheckError(err)
 	// extract list of files in archive
 	out, err := exec.Command("tar", "-tf", f.Name()).Output()
-	CheckError(err)
+	utils.CheckError(err)
 	// compare to expected archive
 	// The order of output from tar -tf isn't consistent, so we can't rely on the string
 	expectedArchiveStr := "\ndir1/file1\ndir1/file2\ndir1/file3\ndir2/file1\ndir2/file2\ndir2/file3\ndir3/file1\ndir3/file2\ndir3/file3"

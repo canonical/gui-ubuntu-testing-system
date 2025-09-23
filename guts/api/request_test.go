@@ -1,7 +1,9 @@
-package main
+package api
 
 import (
 	"fmt"
+	"guts.ubuntu.com/v2/database"
+	"guts.ubuntu.com/v2/utils"
 	"reflect"
 	"testing"
 )
@@ -23,7 +25,7 @@ func makeDummyJobReq() JobRequest {
 func TestParseJobFromJsonSuccess(t *testing.T) {
 	inputJson := `{"artifact_url": "myurl", "tests_repo": "myrepo", "tests_repo_branch": "main", "tests_plans": ["plan1", "plan2"], "testbed": "mytestbedurl", "debug": false, "priority": 1, "reporter": ""}`
 	actualJobReq, err := ParseJobFromJson([]byte(inputJson))
-	CheckError(err)
+	utils.CheckError(err)
 	expectedJobReq := makeDummyJobReq()
 	if !reflect.DeepEqual(actualJobReq, expectedJobReq) {
 		t.Errorf("Parsed job not same as expected!\nExpected: %v\nActual: %v", expectedJobReq, actualJobReq)
@@ -39,41 +41,35 @@ func TestParseJobFromJsonFails(t *testing.T) {
 }
 
 func TestGetAuthDataForKeySuccess(t *testing.T) {
-	ParseArgs()
-	err := ParseConfig(configFilePath)
-	CheckError(err)
-	err = Setup()
-	if SkipTestIfPostgresInactive(err) {
+	_, Driver, _, err := Setup()
+	if database.SkipTestIfPostgresInactive(err) {
 		t.Skip("Skipping test as postgresql service is not up")
 	} else {
-		CheckError(err)
+		utils.CheckError(err)
 	}
 	andersson123KeyPreSha := "4c126f75-c7d8-4a89-9370-f065e7ff4208"
-	andersson123Key := Sha256sumOfString(andersson123KeyPreSha)
+	andersson123Key := utils.Sha256sumOfString(andersson123KeyPreSha)
 	var expectedTimData UserData
 	expectedTimData.Username = "andersson123"
 	expectedTimData.Key = "ba580bf88cfbc949f4894c85f65e65932872073105cb79d44caafa416452fbf2"
 	expectedTimData.MaxPriority = 10
-	timData, err := GetAuthDataForKey(andersson123Key)
-	CheckError(err)
+	timData, err := GetAuthDataForKey(andersson123Key, Driver)
+	utils.CheckError(err)
 	if !reflect.DeepEqual(expectedTimData, timData) {
 		t.Errorf("Expected userdata not the same as actual:\nExpected: %v\nActual: %v", expectedTimData, timData)
 	}
 }
 
 func TestGetAuthDataForKeyUnknownUser(t *testing.T) {
-	ParseArgs()
-	err := ParseConfig(configFilePath)
-	CheckError(err)
-	err = Setup()
-	if SkipTestIfPostgresInactive(err) {
+	_, Driver, _, err := Setup()
+	if database.SkipTestIfPostgresInactive(err) {
 		t.Skip("Skipping test as postgresql service is not up")
 	} else {
-		CheckError(err)
+		utils.CheckError(err)
 	}
 	farnsworthKeyPreSha := "good-news-everyone"
-	farnsworthKey := Sha256sumOfString(farnsworthKeyPreSha)
-	_, err = GetAuthDataForKey(farnsworthKey)
+	farnsworthKey := utils.Sha256sumOfString(farnsworthKeyPreSha)
+	_, err = GetAuthDataForKey(farnsworthKey, Driver)
 	expectedErrString := fmt.Sprintf("key %v doesn't exist", farnsworthKey)
 	if !reflect.DeepEqual(err.Error(), expectedErrString) {
 		t.Errorf("Unexpected error: %v\nExpected error: %v", err.Error(), expectedErrString)
@@ -81,150 +77,178 @@ func TestGetAuthDataForKeyUnknownUser(t *testing.T) {
 }
 
 func TestAuthorizeUserAndAssignPriorityReqUnderMaxPrio(t *testing.T) {
-	ParseArgs()
-	err := ParseConfig(configFilePath)
-	CheckError(err)
-	err = Setup()
-	if SkipTestIfPostgresInactive(err) {
+	_, Driver, _, err := Setup()
+	if database.SkipTestIfPostgresInactive(err) {
 		t.Skip("Skipping test as postgresql service is not up")
 	} else {
-		CheckError(err)
+		utils.CheckError(err)
 	}
 
 	andersson123KeyPreSha := "4c126f75-c7d8-4a89-9370-f065e7ff4208"
-	andersson123Key := Sha256sumOfString(andersson123KeyPreSha)
+	andersson123Key := utils.Sha256sumOfString(andersson123KeyPreSha)
 
 	dummyJobReq := makeDummyJobReq()
 
-	_, alteredJobReq, err := AuthorizeUserAndAssignPriority(andersson123Key, dummyJobReq)
-	CheckError(err)
+	_, alteredJobReq, err := AuthorizeUserAndAssignPriority(andersson123Key, dummyJobReq, Driver)
+	utils.CheckError(err)
 	if !reflect.DeepEqual(alteredJobReq, dummyJobReq) {
 		t.Errorf("Job request unintentionally altered!\nIntended: %v\nActual: %v", dummyJobReq, alteredJobReq)
 	}
 }
 
-func TestAuthorizeUserAndAssignPriorityReqMaxPrio(t *testing.T) {
-	ParseArgs()
-	err := ParseConfig(configFilePath)
-	CheckError(err)
-	err = Setup()
-	if SkipTestIfPostgresInactive(err) {
+func TestAuthorizeUserAndAssignPriorityBadKey(t *testing.T) {
+	_, Driver, _, err := Setup()
+	if database.SkipTestIfPostgresInactive(err) {
 		t.Skip("Skipping test as postgresql service is not up")
 	} else {
-		CheckError(err)
+		utils.CheckError(err)
+	}
+
+	keyPreSha := "bender-bending-rodriguez"
+	key := utils.Sha256sumOfString(keyPreSha)
+
+	dummyJobReq := makeDummyJobReq()
+
+	_, _, err = AuthorizeUserAndAssignPriority(key, dummyJobReq, Driver)
+	if err == nil {
+		t.Errorf("Authorization should have failed for key %v", keyPreSha)
+	}
+	expectedErrString := "key 7f520d809f8c4cb076fc8ddf41f7a793a0196cc8b975dbe66745f557a1d0201b doesn't exist"
+	if err.Error() != expectedErrString {
+		t.Errorf("expected error string not same as actual\nexpected: %v\nactual: %v", expectedErrString, err.Error())
+	}
+}
+
+func TestAuthorizeUserAndAssignPriorityReqMaxPrio(t *testing.T) {
+	_, Driver, _, err := Setup()
+	if database.SkipTestIfPostgresInactive(err) {
+		t.Skip("Skipping test as postgresql service is not up")
+	} else {
+		utils.CheckError(err)
 	}
 
 	andersson123KeyPreSha := "4c126f75-c7d8-4a89-9370-f065e7ff4208"
-	andersson123Key := Sha256sumOfString(andersson123KeyPreSha)
+	andersson123Key := utils.Sha256sumOfString(andersson123KeyPreSha)
 
 	dummyJobReq := makeDummyJobReq()
 	dummyJobReq.Priority = 10
 
-	_, alteredJobReq, err := AuthorizeUserAndAssignPriority(andersson123Key, dummyJobReq)
-	CheckError(err)
+	_, alteredJobReq, err := AuthorizeUserAndAssignPriority(andersson123Key, dummyJobReq, Driver)
+	utils.CheckError(err)
 	if !reflect.DeepEqual(alteredJobReq, dummyJobReq) {
 		t.Errorf("Job request unintentionally altered!\nIntended: %v\nActual: %v", dummyJobReq, alteredJobReq)
 	}
 }
 
 func TestAuthorizeUserAndAssignPriorityReqOverMaxPrio(t *testing.T) {
-	ParseArgs()
-	err := ParseConfig(configFilePath)
-	CheckError(err)
-	err = Setup()
-	if SkipTestIfPostgresInactive(err) {
+	_, Driver, _, err := Setup()
+	if database.SkipTestIfPostgresInactive(err) {
 		t.Skip("Skipping test as postgresql service is not up")
 	} else {
-		CheckError(err)
+		utils.CheckError(err)
 	}
 
 	andersson123KeyPreSha := "4c126f75-c7d8-4a89-9370-f065e7ff4208"
-	andersson123Key := Sha256sumOfString(andersson123KeyPreSha)
+	andersson123Key := utils.Sha256sumOfString(andersson123KeyPreSha)
 
 	dummyJobReq := makeDummyJobReq()
 	dummyJobReq.Priority = 11
 
-	timData, alteredJobReq, err := AuthorizeUserAndAssignPriority(andersson123Key, dummyJobReq)
-	CheckError(err)
+	timData, alteredJobReq, err := AuthorizeUserAndAssignPriority(andersson123Key, dummyJobReq, Driver)
+	utils.CheckError(err)
 	if alteredJobReq.Priority != timData.MaxPriority {
 		t.Errorf("Request priority is %v and should have been reduced to %v", alteredJobReq.Priority, timData.MaxPriority)
 	}
 }
 
 func TestValidateArtifactUrlDeb(t *testing.T) {
+	_, _, args, err := Setup()
+	utils.CheckError(err)
 	// serve a deb
-	ServeDirectory()
+	utils.ServeDirectory("/../../postgres/test-data/test-files/")
 	// create the url
 	testUrl := "http://localhost:9999/hello_2.10-3build1_amd64.deb"
 	// validate the url
-	err := ValidateArtifactUrl(testUrl)
-	CheckError(err)
+	err = ValidateArtifactUrl(testUrl, args.ConfigFilePath)
+	utils.CheckError(err)
 }
 
 func TestValidateArtifactUrlSnap(t *testing.T) {
+	_, _, args, err := Setup()
+	utils.CheckError(err)
 	// serve a snap
-	ServeDirectory()
+	utils.ServeDirectory("/../../postgres/test-data/test-files/")
 	// create the url
 	testUrl := "http://localhost:9999/hello_42.snap"
 	// validate the url
-	err := ValidateArtifactUrl(testUrl)
-	CheckError(err)
+	err = ValidateArtifactUrl(testUrl, args.ConfigFilePath)
+	utils.CheckError(err)
 }
 
 func TestValidateArtifactUrlInvalidArtifactType(t *testing.T) {
+	_, _, args, err := Setup()
+	utils.CheckError(err)
 	// serve a snap
-	ServeDirectory()
+	utils.ServeDirectory("/../../postgres/test-data/test-files/")
 	// create the url
 	testUrl := "http://localhost:9999/hello_42.rpm"
 	// validate the url
-	err := ValidateArtifactUrl(testUrl)
+	err = ValidateArtifactUrl(testUrl, args.ConfigFilePath)
 	if err == nil {
 		t.Errorf("Validating %v threw no error when it should have!", testUrl)
 	}
 }
 
 func TestValidateArtifactUrlNonexistentUrl(t *testing.T) {
+	_, _, args, err := Setup()
+	utils.CheckError(err)
 	// serve a snap
-	ServeDirectory()
+	utils.ServeDirectory("/../../postgres/test-data/test-files/")
 	// create the url
 	testUrl := "http://localhost:9999/no-exist.deb"
 	// validate the url
-	err := ValidateArtifactUrl(testUrl)
+	err = ValidateArtifactUrl(testUrl, args.ConfigFilePath)
 	if err == nil {
 		t.Errorf("Validating %v threw no error when it should have!", testUrl)
 	}
 }
 
 func TestValidateArtifactUrlUnacceptableDomain(t *testing.T) {
+	_, _, args, err := Setup()
+	utils.CheckError(err)
 	// serve a snap
-	ServeDirectory()
+	utils.ServeDirectory("/../../postgres/test-data/test-files/")
 	// create the url
 	testUrl := "http://farnsworth:9999/no-exist.deb"
 	// validate the url
-	err := ValidateArtifactUrl(testUrl)
+	err = ValidateArtifactUrl(testUrl, args.ConfigFilePath)
 	if err == nil {
 		t.Errorf("Validating %v threw no error when it should have!", testUrl)
 	}
 }
 
 func TestValidateTestbedUrlIso(t *testing.T) {
+	_, _, args, err := Setup()
+	utils.CheckError(err)
 	// serve an iso
-	ServeDirectory()
+	utils.ServeDirectory("/../../postgres/test-data/test-files/")
 	// create the url
 	testUrl := "http://localhost:9999/questing-mini-iso-amd64.iso"
 	// validate the url
-	err := ValidateTestbedUrl(testUrl)
-	CheckError(err)
+	err = ValidateTestbedUrl(testUrl, args.ConfigFilePath)
+	utils.CheckError(err)
 }
 
 func TestValidateTestbedUrlImg(t *testing.T) {
+	_, _, args, err := Setup()
+	utils.CheckError(err)
 	// serve an iso
-	ServeDirectory()
+	utils.ServeDirectory("/../../postgres/test-data/test-files/")
 	// create the url
 	testUrl := "http://localhost:9999/testimg.img"
 	// validate the url
-	err := ValidateTestbedUrl(testUrl)
-	CheckError(err)
+	err = ValidateTestbedUrl(testUrl, args.ConfigFilePath)
+	utils.CheckError(err)
 }
 
 func TestValidateTestData(t *testing.T) {
@@ -235,7 +259,7 @@ func TestValidateTestData(t *testing.T) {
 		"tests/firefox-example/plans/extended.yaml",
 	}
 	err := ValidateTestData(branch, repo, plans)
-	CheckError(err)
+	utils.CheckError(err)
 }
 
 func TestValidateTestDataBadRemote(t *testing.T) {
@@ -278,24 +302,31 @@ func TestValidateTestDataBadPlans(t *testing.T) {
 }
 
 func TestWriteJobEntryToDbSucceeds(t *testing.T) {
-	ParseArgs()
-	err := ParseConfig(configFilePath)
-	CheckError(err)
-	err = Setup()
-	if SkipTestIfPostgresInactive(err) {
+	_, Driver, _, err := Setup()
+	utils.CheckError(err)
+	if database.SkipTestIfPostgresInactive(err) {
 		t.Skip("Skipping test as postgresql service is not up")
 	} else {
-		CheckError(err)
+		utils.CheckError(err)
 	}
 
 	andersson123KeyPreSha := "4c126f75-c7d8-4a89-9370-f065e7ff4208"
-	andersson123Key := Sha256sumOfString(andersson123KeyPreSha)
-	timData, err := GetAuthDataForKey(andersson123Key)
-	CheckError(err)
+	andersson123Key := utils.Sha256sumOfString(andersson123KeyPreSha)
+	timData, err := GetAuthDataForKey(andersson123Key, Driver)
+	utils.CheckError(err)
 
 	dummyJobReq := makeDummyJobReq()
 	jobEntry := CreateJobEntry(dummyJobReq, timData)
 
-	err = WriteJobEntryToDb(jobEntry)
-	CheckError(err)
+	err = WriteJobEntryToDb(jobEntry, Driver)
+	utils.CheckError(err)
+}
+
+func TestJobRequestToJson(t *testing.T) {
+	jobReq := makeDummyJobReq()
+	expectedJson := `{"artifact_url":"myurl","tests_repo":"myrepo","tests_repo_branch":"main","tests_plans":["plan1","plan2"],"testbed":"mytestbedurl","debug":false,"priority":1,"reporter":""}`
+	jobJson := jobReq.ToJson()
+	if expectedJson != jobJson {
+		t.Errorf("expected json not same as actual\nexpected: %v\nactual: %v", expectedJson, jobJson)
+	}
 }

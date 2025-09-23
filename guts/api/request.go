@@ -1,10 +1,12 @@
-package main
+package api
 
 import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
 	"github.com/google/uuid"
+	"guts.ubuntu.com/v2/database"
+	"guts.ubuntu.com/v2/utils"
 	"net/http"
 	"os"
 	"os/exec"
@@ -25,7 +27,7 @@ type JobRequest struct {
 	Reporter        string   `json:"reporter"`
 }
 
-func (j JobRequest) toJson() string {
+func (j JobRequest) ToJson() string {
 	b, err := json.Marshal(j)
 	if err != nil { // coverage-ignore
 		return ""
@@ -45,36 +47,37 @@ func ParseJobFromJson(jsonData []byte) (JobRequest, error) {
 	return thisJob, err
 }
 
-func ProcessJobRequest(apiKey string, jobReq JobRequest) (string, error) {
+// Don't need to test this directly, it's tested by api_test.go
+func ProcessJobRequest(cfgPath, apiKey string, jobReq JobRequest, driver database.DbDriver) (string, error) { // coverage-ignore
 	if apiKey == "" {
 		return "", EmptyApiKeyError{}
 	}
-	shakey := Sha256sumOfString(apiKey)
-	userData, jobReq, err := AuthorizeUserAndAssignPriority(shakey, jobReq)
+	shakey := utils.Sha256sumOfString(apiKey)
+	userData, jobReq, err := AuthorizeUserAndAssignPriority(shakey, jobReq, driver)
 	if err != nil {
 		return "", ApiKeyNotAcceptedError{}
 	}
-	if err = ValidateArtifactUrl(*jobReq.ArtifactUrl); err != nil {
+	if err = ValidateArtifactUrl(*jobReq.ArtifactUrl, cfgPath); err != nil {
 		return "", err
 	}
-	if err = ValidateTestbedUrl(jobReq.TestBed); err != nil {
+	if err = ValidateTestbedUrl(jobReq.TestBed, cfgPath); err != nil {
 		return "", err
 	}
 	if err = ValidateTestData(jobReq.TestsRepoBranch, jobReq.TestsRepo, jobReq.TestsPlans); err != nil {
 		return "", err
 	}
 	jobRow := CreateJobEntry(jobReq, userData)
-	if err = WriteJobEntryToDb(jobRow); err != nil { // coverage-ignore
+	if err = WriteJobEntryToDb(jobRow, driver); err != nil { // coverage-ignore
 		return "", err
 	}
-	returnJson := fmt.Sprintf(`{"uuid": "%v", "status_url": "%v"}`, jobRow.Uuid, GetStatusUrlForUuid(jobRow.Uuid))
+	returnJson := fmt.Sprintf(`{"uuid": "%v", "status_url": "%v"}`, jobRow.Uuid, GetStatusUrlForUuid(jobRow.Uuid, cfgPath))
 	return returnJson, nil
 }
 
-func GetAuthDataForKey(key string) (UserData, error) {
+func GetAuthDataForKey(key string, driver database.DbDriver) (UserData, error) {
 	var user UserData
 	var params = []string{"username", "key", "maximum_priority"}
-	row, err := Driver.QueryRow("users", "key", key, params)
+	row, err := driver.QueryRow("users", "key", key, params)
 	if err != nil { // coverage-ignore
 		return user, err
 	}
@@ -91,8 +94,8 @@ func GetAuthDataForKey(key string) (UserData, error) {
 	return user, err
 }
 
-func AuthorizeUserAndAssignPriority(shadKey string, jobReq JobRequest) (UserData, JobRequest, error) {
-	userData, err := GetAuthDataForKey(shadKey)
+func AuthorizeUserAndAssignPriority(shadKey string, jobReq JobRequest, driver database.DbDriver) (UserData, JobRequest, error) {
+	userData, err := GetAuthDataForKey(shadKey, driver)
 	if err != nil {
 		return userData, jobReq, err
 	}
@@ -102,19 +105,19 @@ func AuthorizeUserAndAssignPriority(shadKey string, jobReq JobRequest) (UserData
 	return userData, jobReq, nil
 }
 
-func ValidateArtifactUrl(artifactUrl string) error {
-	err := ParseConfig(configFilePath)
-	CheckError(err)
+func ValidateArtifactUrl(artifactUrl, cfgPath string) error {
+	gutsCfg, err := ParseConfig(cfgPath)
+	utils.CheckError(err)
 	types := []string{"snap", "deb"}
-	err = ValidateUrlAgainstDomainsAndTypes(artifactUrl, GutsCfg.Api.ArtifactDomains, types)
+	err = ValidateUrlAgainstDomainsAndTypes(artifactUrl, gutsCfg.Api.ArtifactDomains, types)
 	return err
 }
 
-func ValidateTestbedUrl(testbedUrl string) error {
-	err := ParseConfig(configFilePath)
-	CheckError(err)
+func ValidateTestbedUrl(testbedUrl, cfgPath string) error {
+	gutsCfg, err := ParseConfig(cfgPath)
+	utils.CheckError(err)
 	types := []string{"img", "iso"}
-	err = ValidateUrlAgainstDomainsAndTypes(testbedUrl, GutsCfg.Api.TestbedDomains, types)
+	err = ValidateUrlAgainstDomainsAndTypes(testbedUrl, gutsCfg.Api.TestbedDomains, types)
 	return err
 }
 
@@ -128,7 +131,7 @@ func ValidateUrlAgainstDomainsAndTypes(url string, domains []string, artifactTyp
 			if err != nil { // coverage-ignore
 				return err
 			}
-			defer DeferredErrCheck(response.Body.Close)
+			defer utils.DeferredErrCheck(response.Body.Close)
 			if response.StatusCode < 300 && response.StatusCode >= 200 {
 				return nil
 			} else {
@@ -243,7 +246,7 @@ func CreateJobEntry(job JobRequest, uData UserData) JobEntry { // coverage-ignor
 	return thisJob
 }
 
-func WriteJobEntryToDb(job JobEntry) error {
-	err := Driver.InsertJobsRow(job)
+func WriteJobEntryToDb(job JobEntry, driver database.DbDriver) error {
+	err := InsertJobsRow(job, driver)
 	return err
 }

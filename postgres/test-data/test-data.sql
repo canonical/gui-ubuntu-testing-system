@@ -16,7 +16,14 @@ COPY jobs (
 ) FROM './jobs.csv' DELIMITER ',' CSV HEADER;
 
 COPY tests (
-    uuid, test_case, vnc_address, state, results_url, updated_at
+    uuid,
+    test_case,
+    vnc_address,
+    state,
+    results_url,
+    updated_at,
+    tpm,
+    commit_hash
 ) FROM './tests.csv' DELIMITER ',' CSV HEADER;
 
 COPY users (

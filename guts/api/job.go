@@ -1,9 +1,11 @@
-package main
+package api
 
 import (
 	"database/sql"
 	"encoding/json"
 	"github.com/lib/pq"
+	"guts.ubuntu.com/v2/database"
+	"guts.ubuntu.com/v2/utils"
 	"time"
 )
 
@@ -32,10 +34,10 @@ type JobWithTestsDetails struct {
 }
 
 type ReturnableJson interface {
-	toJson()
+	ToJson()
 }
 
-func (j JobEntry) toJson() string {
+func (j JobEntry) ToJson() string {
 	b, err := json.Marshal(j)
 	if err != nil { // coverage-ignore
 		return ""
@@ -43,7 +45,7 @@ func (j JobEntry) toJson() string {
 	return string(b)
 }
 
-func (j JobWithTestsDetails) toJson() string {
+func (j JobWithTestsDetails) ToJson() string {
 	b, err := json.Marshal(j)
 	if err != nil { // coverage-ignore
 		return ""
@@ -51,15 +53,15 @@ func (j JobWithTestsDetails) toJson() string {
 	return string(b)
 }
 
-func GetCompleteResultsForUuid(uuidToFind string) (JobWithTestsDetails, error) {
+func GetCompleteResultsForUuid(uuidToFind string, driver database.DbDriver) (JobWithTestsDetails, error) {
 	var completeJob JobWithTestsDetails
-	job, err := FindJobByUuid(uuidToFind)
+	job, err := FindJobByUuid(uuidToFind, driver)
 	if err != nil {
 		return completeJob, err
 	}
 
-	testResults, err := CollateUuidTestResults(uuidToFind)
-	if err != nil { // coverage-ignore
+	testResults, err := CollateUuidTestResults(uuidToFind, driver) // coverage-ignore
+	if err != nil {                                                // coverage-ignore
 		return completeJob, err
 	}
 
@@ -69,15 +71,15 @@ func GetCompleteResultsForUuid(uuidToFind string) (JobWithTestsDetails, error) {
 	return completeJob, nil
 }
 
-func CollateUuidTestResults(uuidToFind string) (map[string]string, error) {
+func CollateUuidTestResults(uuidToFind string, driver database.DbDriver) (map[string]string, error) {
 	testResults := make(map[string]string)
 
 	var params = []string{"test_case", "state"}
-	rows, err := Driver.Query("tests", "uuid", uuidToFind, params)
+	rows, err := driver.Query("tests", "uuid", uuidToFind, params)
 	if err != nil { // coverage-ignore
 		return testResults, err
 	}
-	defer DeferredErrCheck(rows.Close)
+	defer utils.DeferredErrCheck(rows.Close)
 
 	for rows.Next() {
 		var testCase string
@@ -91,10 +93,10 @@ func CollateUuidTestResults(uuidToFind string) (map[string]string, error) {
 	return testResults, nil
 }
 
-func FindJobByUuid(uuidToFind string) (JobEntry, error) {
+func FindJobByUuid(uuidToFind string, driver database.DbDriver) (JobEntry, error) {
 	var job JobEntry
 
-	row, err := Driver.QueryRow("jobs", "uuid", uuidToFind, AllJobColumns)
+	row, err := driver.QueryRow("jobs", "uuid", uuidToFind, AllJobColumns)
 	if err != nil { // coverage-ignore
 		return job, err
 	}

@@ -3,51 +3,39 @@ package main
 import (
 	"fmt"
 	"github.com/gin-gonic/gin"
-	"log"
+	"guts.ubuntu.com/v2/api"
+	"guts.ubuntu.com/v2/utils"
 	"net/http"
 )
 
-func CheckError(err error) { // coverage-ignore
-	if err != nil {
-		log.Fatal(err.Error())
-	}
-}
-
-func DeferredErrCheck(f func() error) {
-	err := f()
-	CheckError(err)
-}
-
-func DeferredErrCheckStringArg(f func(s string) error, s string) {
-	err := f(s)
-	CheckError(err)
-}
-
-func RequestEndpoint(c *gin.Context) {
+// ignore coverage here - it's not smart enough for gin contexts
+func RequestEndpoint(c *gin.Context) { // coverage-ignore
+	_, Driver, args, err := api.Setup()
+	utils.CheckError(err)
 	bareKey := c.GetHeader("X-Api-Key")
-	var jobReq JobRequest
+	var jobReq api.JobRequest
 	if err := c.BindJSON(&jobReq); err != nil {
 		c.IndentedJSON(http.StatusBadRequest, gin.H{"message": fmt.Sprintf("Internal server error:\n%v", err.Error())})
 		return
 	}
-	retJson, err := ProcessJobRequest(bareKey, jobReq)
+	retJson, err := api.ProcessJobRequest(args.ConfigFilePath, bareKey, jobReq, Driver)
 	if err != nil {
 		switch t := err.(type) {
 		default: // coverage-ignore
 			c.IndentedJSON(http.StatusInternalServerError, gin.H{"message": fmt.Sprintf("Internal server error of type %v:\n%v", t, err.Error())})
-		case EmptyApiKeyError:
+		case api.EmptyApiKeyError:
 			c.IndentedJSON(http.StatusUnauthorized, gin.H{"message": err.Error()})
-		case ApiKeyNotAcceptedError:
+		case api.ApiKeyNotAcceptedError:
 			c.IndentedJSON(http.StatusUnauthorized, gin.H{"message": err.Error()})
-		case BadUrlError:
+		case api.BadUrlError:
 			c.IndentedJSON(http.StatusBadRequest, gin.H{"message": err.Error()})
-		case InvalidArtifactTypeError:
+		case api.InvalidArtifactTypeError:
 			c.IndentedJSON(http.StatusBadRequest, gin.H{"message": err.Error()})
-		case NonWhitelistedDomainError:
+		case api.NonWhitelistedDomainError:
 			c.IndentedJSON(http.StatusForbidden, gin.H{"message": err.Error()})
-		case GenericGitError:
+		case api.GenericGitError:
 			c.IndentedJSON(http.StatusBadRequest, gin.H{"message": err.Error()})
-		case PlanFileNonexistentError:
+		case api.PlanFileNonexistentError:
 			c.IndentedJSON(http.StatusBadRequest, gin.H{"message": err.Error()})
 		}
 		return
@@ -55,37 +43,42 @@ func RequestEndpoint(c *gin.Context) {
 	c.IndentedJSON(http.StatusOK, retJson)
 }
 
-func JobEndpoint(c *gin.Context) {
+// ignore coverage here - it's not smart enough for gin contexts
+func JobEndpoint(c *gin.Context) { // coverage-ignore
+	_, Driver, _, err := api.Setup()
+	utils.CheckError(err)
 	uuid := c.Param("uuid")
-	err := ValidateUuid(uuid)
+	err = utils.ValidateUuid(uuid)
 	if err != nil {
 		c.IndentedJSON(http.StatusBadRequest, gin.H{"message": err.Error()})
 	}
-	job, err := GetCompleteResultsForUuid(uuid)
+	job, err := api.GetCompleteResultsForUuid(uuid, Driver)
 	if err != nil {
 		switch t := err.(type) {
 		default: // coverage-ignore
 			c.IndentedJSON(http.StatusInternalServerError, gin.H{"message": fmt.Sprintf("Internal server error of type %v:\n%v", t, err.Error())})
-		case UuidNotFoundError:
+		case api.UuidNotFoundError:
 			c.IndentedJSON(http.StatusNotFound, gin.H{"message": err.Error()})
 		}
 	}
-	// not sure if this will marshal the time field properly. need to check
-	c.IndentedJSON(http.StatusOK, job.toJson())
+	c.IndentedJSON(http.StatusOK, job.ToJson())
 }
 
-func ArtifactsEndpoint(c *gin.Context) {
+// ignore coverage here - it's not smart enough for gin contexts
+func ArtifactsEndpoint(c *gin.Context) { // coverage-ignore
+	GutsCfg, Driver, _, err := api.Setup()
+	utils.CheckError(err)
 	uuid := c.Param("uuid")
-	err := ValidateUuid(uuid)
+	err = utils.ValidateUuid(uuid)
 	if err != nil {
 		c.IndentedJSON(http.StatusBadRequest, gin.H{"message": err.Error()})
 	}
-	artifactsTarGz, err := CollateArtifacts(uuid)
+	artifactsTarGz, err := api.CollateArtifacts(uuid, Driver, GutsCfg)
 	if err != nil {
 		switch t := err.(type) {
 		default: // coverage-ignore
 			c.IndentedJSON(http.StatusInternalServerError, gin.H{"message": fmt.Sprintf("Internal server error of type %v:\n%v", t, err.Error())})
-		case UuidNotFoundError:
+		case api.UuidNotFoundError:
 			c.IndentedJSON(http.StatusNotFound, gin.H{"message": err.Error()})
 		}
 	}
@@ -93,16 +86,14 @@ func ArtifactsEndpoint(c *gin.Context) {
 }
 
 func main() { // coverage-ignore
-	ParseArgs()
-	err := ParseConfig(configFilePath)
-	CheckError(err)
-	Driver, err = NewDbDriver(GutsCfg)
-	CheckError(err)
 	router := gin.Default()
 	router.GET("/job/:uuid", JobEndpoint)
 	router.GET("/artifacts/:uuid/results.tar.gz", ArtifactsEndpoint)
 	router.POST("/request/", RequestEndpoint)
+	args := api.ParseArgs()
+	GutsCfg, err := api.ParseConfig(args.ConfigFilePath)
+	utils.CheckError(err)
 	router_address := fmt.Sprintf("%v:%v", GutsCfg.Api.Hostname, GutsCfg.Api.Port)
 	err = router.Run(router_address)
-	CheckError(err)
+	utils.CheckError(err)
 }

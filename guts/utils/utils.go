@@ -1,16 +1,44 @@
-package main
+package utils
 
 import (
 	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
 	"io"
+	"log"
+	"net"
 	"net/http"
 	"net/url"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"regexp"
+	"time"
 )
+
+type InvalidUuidError struct {
+	uuid string
+}
+
+func (e InvalidUuidError) Error() string {
+	return fmt.Sprintf("%v isn't a valid uuid!", e.uuid)
+}
+
+func CheckError(err error) { // coverage-ignore
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+}
+
+func DeferredErrCheck(f func() error) { // coverage-ignore
+	err := f()
+	CheckError(err)
+}
+
+func DeferredErrCheckStringArg(f func(s string) error, s string) { // coverage-ignore
+	err := f(s)
+	CheckError(err)
+}
 
 func ValidateUuid(Uuid string) error {
 	if regexp.MustCompile(`[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}`).MatchString(Uuid) {
@@ -40,7 +68,7 @@ func AllFilesExist(paths ...string) bool {
 	return true
 }
 
-func AtomicWrite(data []byte, filename string) error {
+func AtomicWrite(data []byte, filename string) error { // coverage-ignore
 	newFile := fmt.Sprintf("%v.new", filename)
 	err := os.WriteFile(newFile, data, 0644)
 	if err != nil { // coverage-ignore
@@ -63,9 +91,9 @@ func CreateDirIfNotExists(directory string) error {
 	return nil
 }
 
-func GetDirSize(directory string) (int, error) {
+func GetDirSize(directory string) (int, error) { // coverage-ignore
 	// Gets the total size in bytes of a directory
-	DirSize = 0
+	DirSize := 0
 	err := filepath.Walk(directory,
 		func(path string, info os.FileInfo, err error) error {
 			if err != nil { // coverage-ignore
@@ -91,7 +119,7 @@ func IsValidUrl(urlToTest string) bool {
 func DownloadFile(url string) ([]byte, error) {
 	var b []byte
 	resp, err := http.Get(url)
-	if err != nil {
+	if err != nil { // coverage-ignore
 		return b, err
 	}
 	defer DeferredErrCheck(resp.Body.Close)
@@ -111,13 +139,8 @@ func Sha256sumOfString(inputString string) string {
 	return hex.EncodeToString(hasher.Sum(nil))
 }
 
-func GetStatusUrlForUuid(uuid string) string {
-	statusUrl := fmt.Sprintf("%v%v/status/%v", GetProtocolPrefix(), GutsCfg.Api.Hostname, uuid)
-	return statusUrl
-}
-
-func GetProtocolPrefix() string {
-	switch GutsCfg.Api.Port {
+func GetProtocolPrefix(port int) string {
+	switch port {
 	default:
 		return ""
 	case 8080:
@@ -125,4 +148,29 @@ func GetProtocolPrefix() string {
 	case 443:
 		return "https://"
 	}
+}
+
+// this function is just used for testing, so we don't test it
+func ServeDirectory(relativeDirToServe string) { // coverage-ignore
+	pwd, err := os.Getwd()
+	CheckError(err)
+	port := "9999"
+	testFilesDir := pwd + relativeDirToServe
+	serveCmd := exec.Command("php", "-S", "localhost:"+port)
+	serveCmd.Dir = testFilesDir
+	go serveCmd.Run() //nolint:all
+	for i := 0; i < 60; i++ {
+		timeout := time.Second * 5
+		conn, err := net.DialTimeout("tcp", net.JoinHostPort("localhost", port), timeout)
+		if err != nil {
+			time.Sleep(timeout)
+		} else {
+			if conn != nil {
+				err := conn.Close()
+				CheckError(err)
+				return
+			}
+		}
+	}
+	CheckError(fmt.Errorf("Port never came up when trying to serve directory with command:\n%v", serveCmd))
 }

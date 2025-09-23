@@ -1,22 +1,27 @@
-package main
+package api
 
 import (
 	"flag"
 	"os"
 )
 
-var (
-	configFilePath string
-)
+type ApiArgs struct {
+	ConfigFilePath string
+}
 
-func ParseArgs() {
+func ParseArgs() ApiArgs {
+	var args ApiArgs
+
 	cfgPathFromEnv := os.Getenv("GUTS_CFG_PATH")
-	if cfgPathFromEnv == "" {
+	if cfgPathFromEnv == "" { // coverage-ignore
 		cfgPathFromEnv = "./guts-api.yaml"
 	}
 
 	if flag.Lookup("cfg-path") == nil {
-		flag.StringVar(&configFilePath, "cfg-path", cfgPathFromEnv, "Path to config file for the guts api")
-		flag.Parse()
+		flag.StringVar(&args.ConfigFilePath, "cfg-path", cfgPathFromEnv, "Path to config file for the guts api")
+	} else {
+		args.ConfigFilePath = flag.Lookup("cfg-path").Value.(flag.Getter).Get().(string)
 	}
+	flag.Parse()
+	return args
 }

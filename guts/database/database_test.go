@@ -1,11 +1,11 @@
-package main
+package database
 
 import (
 	"testing"
 )
 
 func TestDbConnect(t *testing.T) {
-	err := Setup()
+	Driver, err := TestDbDriver()
 	if SkipTestIfPostgresInactive(err) {
 		t.Skip("Skipping test as postgresql service is not up")
 	} else {
@@ -18,7 +18,7 @@ func TestDbConnect(t *testing.T) {
 }
 
 func TestDbConnectBadDriver(t *testing.T) {
-	err := Setup()
+	Driver, err := TestDbDriver()
 	if SkipTestIfPostgresInactive(err) {
 		t.Skip("Skipping test as postgresql service is not up")
 	} else {
@@ -34,38 +34,8 @@ func TestDbConnectBadDriver(t *testing.T) {
 	}
 }
 
-func TestNewDbDriver(t *testing.T) {
-	err := Setup()
-	if SkipTestIfPostgresInactive(err) {
-		t.Skip("Skipping test as postgresql service is not up")
-	} else {
-		CheckError(err)
-	}
-	dummyCfg := GutsCfg
-	_, err = NewDbDriver(dummyCfg)
-	if err != nil {
-		t.Errorf("Unexpected error initialising db driver: %v", err.Error())
-	}
-}
-
-func TestNewDbDriverBadDriver(t *testing.T) {
-	err := Setup()
-	if SkipTestIfPostgresInactive(err) {
-		t.Skip("Skipping test as postgresql service is not up")
-	} else {
-		CheckError(err)
-	}
-	dummyCfg := GutsCfg
-	dummyCfg.Database.Driver = "not-a-db"
-	_, err = NewDbDriver(dummyCfg)
-	expectedErrString := "database couldn't be initialised - not-a-db is an unsupported driver"
-	if err.Error() != expectedErrString {
-		t.Errorf("Unexpected error string!\nExpected: %v\nActual: %v", expectedErrString, err.Error())
-	}
-}
-
 func TestNewOperationInterfaceSuccess(t *testing.T) {
-	err := Setup()
+	Driver, err := TestDbDriver()
 	if SkipTestIfPostgresInactive(err) {
 		t.Skip("Skipping test as postgresql service is not up")
 	} else {
@@ -78,7 +48,7 @@ func TestNewOperationInterfaceSuccess(t *testing.T) {
 }
 
 func TestNewOperationInterfaceFails(t *testing.T) {
-	err := Setup()
+	Driver, err := TestDbDriver()
 	if SkipTestIfPostgresInactive(err) {
 		t.Skip("Skipping test as postgresql service is not up")
 	} else {
@@ -94,16 +64,22 @@ func TestNewOperationInterfaceFails(t *testing.T) {
 }
 
 func TestDbAvailableSuccess(t *testing.T) {
-	err := Setup()
+	Driver, err := TestDbDriver()
 	if SkipTestIfPostgresInactive(err) {
 		t.Skip("Skipping test as postgresql service is not up")
 	} else {
 		CheckError(err)
 	}
-	Driver, err := NewOperationInterface(Driver)
-	CheckError(err)
 	err = Driver.Interface.DbAvailable()
 	if err != nil {
 		t.Errorf("Unexpected error creating db interface: %v", err.Error())
+	}
+}
+
+func TestPostgresServiceNotUpError(t *testing.T) {
+	var pgError PostgresServiceNotUpError
+	desiredErrString := "Unit postgresql.service is not active."
+	if pgError.Error() != desiredErrString {
+		t.Errorf("PostgresServiceNotUpError giving unexpected error string!\nExpected: %v\nActual: %v", desiredErrString, pgError.Error())
 	}
 }

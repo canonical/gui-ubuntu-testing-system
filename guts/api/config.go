@@ -1,7 +1,9 @@
-package main
+package api
 
 import (
 	"gopkg.in/yaml.v3"
+	"guts.ubuntu.com/v2/database"
+	"guts.ubuntu.com/v2/utils"
 	"os"
 	"path/filepath"
 )
@@ -25,19 +27,25 @@ type GutsApiConfig struct {
 	}
 }
 
-var (
-	GutsCfg GutsApiConfig
-)
+func Setup() (GutsApiConfig, database.DbDriver, ApiArgs, error) {
+	args := ParseArgs()
+	gutsCfg, err := ParseConfig(args.ConfigFilePath)
+	utils.CheckError(err)
+	driver, err := NewDbDriver(gutsCfg)
+	utils.CheckError(err)
+	return gutsCfg, driver, args, err
+}
 
-func ParseConfig(filePath string) error {
+func ParseConfig(filePath string) (GutsApiConfig, error) {
+	var GutsCfg GutsApiConfig
 	filename, err := filepath.Abs(filePath)
 	if err != nil { // coverage-ignore
-		return err
+		return GutsCfg, err
 	}
 	yamlFile, err := os.ReadFile(filename)
 	if err != nil {
-		return err
+		return GutsCfg, err
 	}
 	err = yaml.Unmarshal(yamlFile, &GutsCfg)
-	return err
+	return GutsCfg, err
 }

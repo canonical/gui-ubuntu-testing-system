@@ -1,51 +1,15 @@
 package main
 
 import (
-	"fmt"
 	"github.com/gin-gonic/gin"
-	"net"
+	"guts.ubuntu.com/v2/api"
+	"guts.ubuntu.com/v2/utils"
 	"net/http"
 	"net/http/httptest"
-	"os"
-	"os/exec"
 	"reflect"
 	"strings"
 	"testing"
-	"time"
 )
-
-func Setup() error {
-	ParseArgs()
-	err := ParseConfig(configFilePath)
-	CheckError(err)
-	Driver, err = NewDbDriver(GutsCfg)
-	CheckError(err)
-	return err
-}
-
-func ServeDirectory() {
-	pwd, err := os.Getwd()
-	CheckError(err)
-	port := "9999"
-	testFilesDir := pwd + "/../../postgres/test-data/test-files/"
-	serveCmd := exec.Command("php", "-S", "localhost:"+port)
-	serveCmd.Dir = testFilesDir
-	go serveCmd.Run() //nolint:all
-	for i := 0; i < 60; i++ {
-		timeout := time.Second * 5
-		conn, err := net.DialTimeout("tcp", net.JoinHostPort("localhost", port), timeout)
-		if err != nil {
-			time.Sleep(timeout)
-		} else {
-			if conn != nil {
-				err := conn.Close()
-				CheckError(err)
-				return
-			}
-		}
-	}
-	CheckError(fmt.Errorf("Port never came up when trying to serve directory with command:\n%v", serveCmd))
-}
 
 func SetUpRouter() *gin.Engine {
 	router := gin.Default()
@@ -99,6 +63,7 @@ func TestJobEndpointInvalidUuid(t *testing.T) {
 }
 
 func TestArtifactsEndpoint(t *testing.T) {
+	utils.ServeDirectory("/../postgres/test-data/test-files/")
 	r := SetUpRouter()
 	r.GET("/artifacts/:uuid/results.tar.gz", ArtifactsEndpoint)
 	Uuid := "27549483-e8f5-497f-a05d-e6d8e67a8e8a"
@@ -139,8 +104,8 @@ func TestArtifactsEndpointInvalidUuid(t *testing.T) {
 	}
 }
 
-func CreateAcceptableJobRequest() JobRequest {
-	var req JobRequest
+func CreateAcceptableJobRequest() api.JobRequest {
+	var req api.JobRequest
 	myString := "https://launchpad.net/ubuntu/+archive/primary/+files/hello_2.10-5_amd64.deb"
 	req.ArtifactUrl = &myString
 	req.TestsRepo = "https://github.com/canonical/ubuntu-gui-testing.git"
@@ -159,7 +124,7 @@ func TestRequestEndpointSuccess(t *testing.T) {
 	r := SetUpRouter()
 	r.POST("/request/", RequestEndpoint)
 
-	reqFound, _ := http.NewRequest("POST", "/request/", strings.NewReader(request.toJson()))
+	reqFound, _ := http.NewRequest("POST", "/request/", strings.NewReader(request.ToJson()))
 	reqFound.Header.Add("X-Api-Key", "4c126f75-c7d8-4a89-9370-f065e7ff4208")
 	w := httptest.NewRecorder()
 	r.ServeHTTP(w, reqFound)
@@ -191,7 +156,7 @@ func TestRequestEndpointEmptyApiKey(t *testing.T) {
 	r := SetUpRouter()
 	r.POST("/request/", RequestEndpoint)
 
-	reqFound, _ := http.NewRequest("POST", "/request/", strings.NewReader(request.toJson()))
+	reqFound, _ := http.NewRequest("POST", "/request/", strings.NewReader(request.ToJson()))
 	reqFound.Header.Add("X-Api-Key", "")
 	w := httptest.NewRecorder()
 	r.ServeHTTP(w, reqFound)
@@ -208,7 +173,7 @@ func TestRequestEndpointUnauthorizedApiKey(t *testing.T) {
 	r := SetUpRouter()
 	r.POST("/request/", RequestEndpoint)
 
-	reqFound, _ := http.NewRequest("POST", "/request/", strings.NewReader(request.toJson()))
+	reqFound, _ := http.NewRequest("POST", "/request/", strings.NewReader(request.ToJson()))
 	reqFound.Header.Add("X-Api-Key", "asdf")
 	w := httptest.NewRecorder()
 	r.ServeHTTP(w, reqFound)
@@ -227,7 +192,7 @@ func TestRequestEndpointBadUrlError(t *testing.T) {
 	r := SetUpRouter()
 	r.POST("/request/", RequestEndpoint)
 
-	reqFound, _ := http.NewRequest("POST", "/request/", strings.NewReader(request.toJson()))
+	reqFound, _ := http.NewRequest("POST", "/request/", strings.NewReader(request.ToJson()))
 	reqFound.Header.Add("X-Api-Key", "4c126f75-c7d8-4a89-9370-f065e7ff4208")
 	w := httptest.NewRecorder()
 	r.ServeHTTP(w, reqFound)
@@ -246,7 +211,7 @@ func TestRequestEndpointInvalidArtifactType(t *testing.T) {
 	r := SetUpRouter()
 	r.POST("/request/", RequestEndpoint)
 
-	reqFound, _ := http.NewRequest("POST", "/request/", strings.NewReader(request.toJson()))
+	reqFound, _ := http.NewRequest("POST", "/request/", strings.NewReader(request.ToJson()))
 	reqFound.Header.Add("X-Api-Key", "4c126f75-c7d8-4a89-9370-f065e7ff4208")
 	w := httptest.NewRecorder()
 	r.ServeHTTP(w, reqFound)
@@ -265,7 +230,7 @@ func TestRequestEndpointBadArtifactDomain(t *testing.T) {
 	r := SetUpRouter()
 	r.POST("/request/", RequestEndpoint)
 
-	reqFound, _ := http.NewRequest("POST", "/request/", strings.NewReader(request.toJson()))
+	reqFound, _ := http.NewRequest("POST", "/request/", strings.NewReader(request.ToJson()))
 	reqFound.Header.Add("X-Api-Key", "4c126f75-c7d8-4a89-9370-f065e7ff4208")
 	w := httptest.NewRecorder()
 	r.ServeHTTP(w, reqFound)
@@ -283,7 +248,7 @@ func TestRequestEndpointBadTestbedUrl(t *testing.T) {
 	r := SetUpRouter()
 	r.POST("/request/", RequestEndpoint)
 
-	reqFound, _ := http.NewRequest("POST", "/request/", strings.NewReader(request.toJson()))
+	reqFound, _ := http.NewRequest("POST", "/request/", strings.NewReader(request.ToJson()))
 	reqFound.Header.Add("X-Api-Key", "4c126f75-c7d8-4a89-9370-f065e7ff4208")
 	w := httptest.NewRecorder()
 	r.ServeHTTP(w, reqFound)
@@ -301,7 +266,7 @@ func TestRequestEndpointGitError(t *testing.T) {
 	r := SetUpRouter()
 	r.POST("/request/", RequestEndpoint)
 
-	reqFound, _ := http.NewRequest("POST", "/request/", strings.NewReader(request.toJson()))
+	reqFound, _ := http.NewRequest("POST", "/request/", strings.NewReader(request.ToJson()))
 	reqFound.Header.Add("X-Api-Key", "4c126f75-c7d8-4a89-9370-f065e7ff4208")
 	w := httptest.NewRecorder()
 	r.ServeHTTP(w, reqFound)
@@ -319,7 +284,7 @@ func TestRequestEndpointBadPlanFile(t *testing.T) {
 	r := SetUpRouter()
 	r.POST("/request/", RequestEndpoint)
 
-	reqFound, _ := http.NewRequest("POST", "/request/", strings.NewReader(request.toJson()))
+	reqFound, _ := http.NewRequest("POST", "/request/", strings.NewReader(request.ToJson()))
 	reqFound.Header.Add("X-Api-Key", "4c126f75-c7d8-4a89-9370-f065e7ff4208")
 	w := httptest.NewRecorder()
 	r.ServeHTTP(w, reqFound)
