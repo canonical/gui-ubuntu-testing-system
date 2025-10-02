@@ -164,3 +164,12 @@ func TestSha256sumOfString(t *testing.T) {
 		t.Errorf("sha256sum of %v should be %v, but is instead %v", myString, mySha, shadString)
 	}
 }
+
+func TestGetFileNameFromUrl(t *testing.T) {
+	url := "https://cdimage.ubuntu.com/daily-live/current/questing-desktop-amd64.iso"
+	expectedName := "questing-desktop-amd64.iso"
+	actualName := GetFileNameFromUrl(url)
+	if expectedName != actualName {
+		t.Errorf("image name parsed from %v should be %v but is %v", url, expectedName, actualName)
+	}
+}

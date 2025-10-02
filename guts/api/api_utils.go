@@ -5,7 +5,6 @@ import (
 	"guts.ubuntu.com/v2/database"
 	"guts.ubuntu.com/v2/utils"
 	"reflect"
-	"slices"
 	"strings"
 )
 
@@ -16,21 +15,6 @@ func GetStatusUrlForUuid(uuid, cfgPath string) string {
 	}
 	statusUrl := fmt.Sprintf("%v%v/status/%v", utils.GetProtocolPrefix(gutsCfg.Api.Port), gutsCfg.Api.Hostname, uuid)
 	return statusUrl
-}
-
-func NewDbDriver(g GutsApiConfig) (database.DbDriver, error) {
-	var driver database.DbDriver
-	driver.Driver = g.Database.Driver
-	driver.ConnectionString = g.Database.ConnectionString
-	driver.SupportedDrivers = []string{"postgres"}
-	if !slices.Contains(driver.SupportedDrivers, driver.Driver) {
-		return driver, fmt.Errorf("database couldn't be initialised - %v is an unsupported driver", driver.Driver)
-	}
-	driver, err := database.NewOperationInterface(driver)
-	if err != nil { // coverage-ignore
-		return driver, err
-	}
-	return driver, nil
 }
 
 func InsertJobsRow(job JobEntry, driver database.DbDriver) error {

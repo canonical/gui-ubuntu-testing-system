@@ -31,7 +31,7 @@ func Setup() (GutsApiConfig, database.DbDriver, ApiArgs, error) {
 	args := ParseArgs()
 	gutsCfg, err := ParseConfig(args.ConfigFilePath)
 	utils.CheckError(err)
-	driver, err := NewDbDriver(gutsCfg)
+	driver, err := database.NewDbDriver(gutsCfg.Database.Driver, gutsCfg.Database.ConnectionString)
 	utils.CheckError(err)
 	return gutsCfg, driver, args, err
 }

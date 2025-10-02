@@ -7,3 +7,4 @@ hello_2.10-3build1_amd64.deb filter=lfs diff=lfs merge=lfs -text
 hello_42.snap filter=lfs diff=lfs merge=lfs -text
 questing-mini-iso-amd64.iso filter=lfs diff=lfs merge=lfs -text
 testimg.img filter=lfs diff=lfs merge=lfs -text
+SHA256SUMS filter=lfs diff=lfs merge=lfs -text

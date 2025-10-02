@@ -13,8 +13,7 @@ func TestNewDbDriver(t *testing.T) {
 	} else {
 		utils.CheckError(err)
 	}
-	dummyCfg := GutsCfg
-	_, err = NewDbDriver(dummyCfg)
+	_, err = database.NewDbDriver(GutsCfg.Database.Driver, GutsCfg.Database.ConnectionString)
 	if err != nil {
 		t.Errorf("Unexpected error initialising db driver: %v", err.Error())
 	}
@@ -29,7 +28,7 @@ func TestNewDbDriverBadDriver(t *testing.T) {
 	}
 	dummyCfg := GutsCfg
 	dummyCfg.Database.Driver = "not-a-db"
-	_, err = NewDbDriver(dummyCfg)
+	_, err = database.NewDbDriver(dummyCfg.Database.Driver, dummyCfg.Database.ConnectionString)
 	expectedErrString := "database couldn't be initialised - not-a-db is an unsupported driver"
 	if err.Error() != expectedErrString {
 		t.Errorf("Unexpected error string!\nExpected: %v\nActual: %v", expectedErrString, err.Error())
