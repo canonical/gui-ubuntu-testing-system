@@ -4,27 +4,13 @@ import (
 	"database/sql"
 	"fmt"
 	_ "github.com/lib/pq"
-	"log"
+	"guts.ubuntu.com/v2/utils"
 	"os/exec"
 	"reflect"
+	"slices"
 	"strings"
+	"time"
 )
-
-func CheckError(err error) { // coverage-ignore
-	if err != nil {
-		log.Fatal(err.Error())
-	}
-}
-
-func DeferredErrCheck(f func() error) { // coverage-ignore
-	err := f()
-	CheckError(err)
-}
-
-func DeferredErrCheckStringArg(f func(s string) error, s string) { // coverage-ignore
-	err := f(s)
-	CheckError(err)
-}
 
 type PostgresServiceNotUpError struct{}
 
@@ -84,6 +70,21 @@ func (d DbDriver) PrepareQuery(query string) (*sql.Stmt, error) { // coverage-ig
 	return stmt, err
 }
 
+func (d DbDriver) RunQueryRow(query string) (*sql.Row, error) {
+	row, err := d.Interface.InterfaceRunQueryRow(query)
+	return row, err
+}
+
+func (d DbDriver) UpdateRow(query string) error {
+	err := d.Interface.InterfaceRunRowUpdate(query)
+	return err
+}
+
+func (d DbDriver) TestsUpdateUpdatedAt(id int) error {
+	err := d.Interface.UpdateUpdatedAt(id)
+	return err
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 // section with interfaces and functionality for different engines
 
@@ -92,6 +93,9 @@ type DbOperationInterface interface {
 	InterfaceQueryRow(table, queryField, queryValue string, fields []string) (*sql.Row, error)
 	InterfaceQuery(table, queryField, queryValue string, fields []string) (*sql.Rows, error)
 	InterfacePrepareQuery(queryString string) (*sql.Stmt, error)
+	InterfaceRunQueryRow(queryString string) (*sql.Row, error)
+	InterfaceRunRowUpdate(query string) error
+	UpdateUpdatedAt(id int) error
 }
 
 type PgOperationInterface struct {
@@ -118,7 +122,7 @@ func (p PgOperationInterface) InterfaceQueryRow(table, queryField, queryValue st
 	if err != nil { // coverage-ignore
 		return row, err
 	}
-	defer DeferredErrCheck(stmt.Close)
+	defer utils.DeferredErrCheck(stmt.Close)
 	row = stmt.QueryRow(queryValue)
 	return row, nil
 }
@@ -130,7 +134,7 @@ func (p PgOperationInterface) InterfaceQuery(table, queryField, queryValue strin
 	if err != nil { // coverage-ignore
 		return rows, err
 	}
-	defer DeferredErrCheck(stmt.Close)
+	defer utils.DeferredErrCheck(stmt.Close)
 	rows, err = stmt.Query(queryValue)
 	if err != nil { // coverage-ignore
 		return rows, err
@@ -141,6 +145,39 @@ func (p PgOperationInterface) InterfaceQuery(table, queryField, queryValue strin
 func (p PgOperationInterface) InterfacePrepareQuery(queryString string) (*sql.Stmt, error) { // coverage-ignore
 	stmt, err := p.Db.Prepare(queryString)
 	return stmt, err
+}
+
+func (p PgOperationInterface) InterfaceRunQueryRow(queryString string) (*sql.Row, error) {
+	var row *sql.Row
+	stmt, err := p.Db.Prepare(queryString)
+	if err != nil { // coverage-ignore
+		return row, err
+	}
+	defer utils.DeferredErrCheck(stmt.Close)
+	row = stmt.QueryRow()
+	return row, nil
+}
+
+func (p PgOperationInterface) InterfaceRunRowUpdate(query string) error {
+	stmt, err := p.Db.Prepare(query)
+	if err != nil { // coverage-ignore
+		return err
+	}
+	defer utils.DeferredErrCheck(stmt.Close)
+	_, err = stmt.Query()
+	return err
+}
+
+func (p PgOperationInterface) UpdateUpdatedAt(id int) error {
+	ts := time.Now()
+	updateCmd := `UPDATE tests SET updated_at=$1 WHERE id=$2`
+	stmt, err := p.Db.Prepare(updateCmd)
+	if err != nil { // coverage-ignore
+		return err
+	}
+	defer utils.DeferredErrCheck(stmt.Close)
+	_, err = stmt.Exec(ts, id)
+	return err
 }
 
 // just used for testing, so we don't test
@@ -154,11 +191,26 @@ func SkipTestIfPostgresInactive(PgError error) bool { // coverage-ignore
 	return false
 }
 
-func TestDbDriver() (DbDriver, error) {
+func TestDbDriver(username, password string) (DbDriver, error) { // coverage-ignore
 	var driver DbDriver
 	driver.Driver = "postgres"
-	driver.ConnectionString = "host=localhost port=5432 user=guts_api password=guts_api dbname=guts sslmode=disable"
+	driver.ConnectionString = fmt.Sprintf("host=localhost port=5432 user=%v password=%v dbname=guts sslmode=disable", username, password)
 	driver.SupportedDrivers = []string{"postgres"}
 	driver, err := NewOperationInterface(driver)
 	return driver, err
+}
+
+func NewDbDriver(desiredDriver, desiredConnectionString string) (DbDriver, error) {
+	var driver DbDriver
+	driver.Driver = desiredDriver
+	driver.ConnectionString = desiredConnectionString
+	driver.SupportedDrivers = []string{"postgres"}
+	if !slices.Contains(driver.SupportedDrivers, driver.Driver) {
+		return driver, fmt.Errorf("database couldn't be initialised - %v is an unsupported driver", driver.Driver)
+	}
+	driver, err := NewOperationInterface(driver)
+	if err != nil { // coverage-ignore
+		return driver, err
+	}
+	return driver, nil
 }

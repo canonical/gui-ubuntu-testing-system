@@ -19,7 +19,7 @@ func SetUpRouter() *gin.Engine {
 func TestJobEndpoint(t *testing.T) {
 	r := SetUpRouter()
 	r.GET("/job/:uuid", JobEndpoint)
-	ExpectedResponse := `"{\"Job\":{\"uuid\":\"4ce9189f-561a-4886-aeef-1836f28b073b\",\"artifact_url\":null,\"tests_repo\":\"https://github.com/canonical/ubuntu-gui-testing.git\",\"tests_repo_branch\":\"main\",\"tests_plans\":[\"tests/firefox-example/plans/extended.yaml\",\"tests/firefox-example/plans/regular.yaml\"],\"image_url\":\"https://cdimage.ubuntu.com/daily-live/current/questing-desktop-amd64.iso\",\"reporter\":\"test_observer\",\"status\":\"running\",\"submitted_at\":\"2025-07-23T14:17:14.632177Z\",\"requester\":\"andersson123\",\"debug\":false,\"priority\":8},\"results\":{\"Firefox-Example-Basic\":\"running\",\"Firefox-Example-New-Tab\":\"spawning\"}}"`
+	ExpectedResponse := `"{\"Job\":{\"uuid\":\"4ce9189f-561a-4886-aeef-1836f28b073b\",\"artifact_url\":null,\"tests_repo\":\"https://github.com/canonical/ubuntu-gui-testing.git\",\"tests_repo_branch\":\"main\",\"tests_plans\":[\"tests/firefox-example/plans/extended.yaml\",\"tests/firefox-example/plans/regular.yaml\"],\"image_url\":\"https://cdimage.ubuntu.com/daily-live/current/questing-desktop-amd64.iso\",\"reporter\":\"test_observer\",\"status\":\"running\",\"submitted_at\":\"2025-07-23T14:17:14.632177Z\",\"requester\":\"andersson123\",\"debug\":false,\"priority\":8},\"results\":{\"Firefox-Example-Basic\":\"requested\",\"Firefox-Example-New-Tab\":\"spawning\"}}"`
 	Uuid := "4ce9189f-561a-4886-aeef-1836f28b073b"
 	reqFound, _ := http.NewRequest("GET", "/job/"+Uuid, nil)
 	w := httptest.NewRecorder()

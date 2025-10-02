@@ -13,6 +13,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"regexp"
+	"strings"
 	"time"
 )
 
@@ -85,7 +86,7 @@ func CreateDirIfNotExists(directory string) error {
 	// Creates a directory if it doesn't exist
 	_, err := os.Open(directory)
 	if err != nil {
-		err = os.Mkdir(directory, 0755)
+		err = os.MkdirAll(directory, 0755)
 		return err
 	}
 	return nil
@@ -148,6 +149,12 @@ func GetProtocolPrefix(port int) string {
 	case 443:
 		return "https://"
 	}
+}
+
+func GetFileNameFromUrl(url string) string {
+	splitUrl := strings.Split(url, "/")
+	fileName := splitUrl[len(splitUrl)-1]
+	return fileName
 }
 
 // this function is just used for testing, so we don't test it
