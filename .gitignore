@@ -1,3 +1,9 @@
 guts/api/main
 guts/api/coverage.out
 guts/api/cover.out
+guts/coverage.out
+guts/cover.out
+guts/database/coverage.out
+guts/database/cover.out
+guts/utils/coverage.out
+guts/utils/cover.out
