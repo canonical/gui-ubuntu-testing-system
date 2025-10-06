@@ -7,3 +7,9 @@ guts/database/coverage.out
 guts/database/cover.out
 guts/utils/coverage.out
 guts/utils/cover.out
+guts/spawner/coverage.out
+guts/spawner/cover.out
+guts/cmd/spawner/cover.out
+guts/cmd/spawner/coverage.out
+guts/cmd/api/cover.out
+guts/cmd/api/coverage.out
