@@ -62,75 +62,13 @@ jobs:
         run: |
           #!/bin/bash
           sudo chown $USER:$USER -R /srv/
-      - name: Run api unit tests
-        working-directory: ./guts/api
+      - name: Run tests + test coverage
         run: |
           #!/bin/bash
-          export GUTS_CFG_PATH=../guts-api.yaml
-          git lfs pull
           set -ex
-          go test -v
-      - name: api test coverage
-        working-directory: ./guts/api
-        run: |
-          #!/bin/bash
-          export GUTS_CFG_PATH=../guts-api.yaml
+          sudo apt-get install -y qemu-system-x86 qemu-utils
           export GOBIN="$(pwd)/gobin"
           mkdir -p "$GOBIN"
+          export PATH="${PATH}:${GOBIN}"
           go install github.com/vladopajic/go-test-coverage/v2@latest
-          go test . -coverprofile=./cover.out -covermode=atomic -coverpkg=.
-          ${GOBIN}/go-test-coverage --config=./../.testcoverage.yml
-      - name: Run database unit tests
-        working-directory: ./guts/database
-        run: |
-          #!/bin/bash
-          export GUTS_CFG_PATH=../guts-api.yaml
-          git lfs pull
-          set -ex
-          go test -v
-      - name: database test coverage
-        working-directory: ./guts/database
-        run: |
-          #!/bin/bash
-          export GUTS_CFG_PATH=../guts-api.yaml
-          export GOBIN="$(pwd)/gobin"
-          mkdir -p "$GOBIN"
-          go install github.com/vladopajic/go-test-coverage/v2@latest
-          go test . -coverprofile=./cover.out -covermode=atomic -coverpkg=.
-          ${GOBIN}/go-test-coverage --config=./../.testcoverage.yml
-      - name: Run utils unit tests
-        working-directory: ./guts/utils
-        run: |
-          #!/bin/bash
-          export GUTS_CFG_PATH=../guts-api.yaml
-          git lfs pull
-          set -ex
-          go test -v
-      - name: utils test coverage
-        working-directory: ./guts/utils
-        run: |
-          #!/bin/bash
-          export GUTS_CFG_PATH=../guts-api.yaml
-          export GOBIN="$(pwd)/gobin"
-          mkdir -p "$GOBIN"
-          go install github.com/vladopajic/go-test-coverage/v2@latest
-          go test . -coverprofile=./cover.out -covermode=atomic -coverpkg=.
-          ${GOBIN}/go-test-coverage --config=./../.testcoverage.yml
-      - name: Run main unit tests
-        working-directory: ./guts/
-        run: |
-          #!/bin/bash
-          export GUTS_CFG_PATH=./guts-api.yaml
-          git lfs pull
-          set -ex
-          go test -v
-      - name: main test coverage
-        working-directory: ./guts
-        run: |
-          #!/bin/bash
-          export GUTS_CFG_PATH=./guts-api.yaml
-          export GOBIN="$(pwd)/gobin"
-          mkdir -p "$GOBIN"
-          go install github.com/vladopajic/go-test-coverage/v2@latest
-          go test . -coverprofile=./cover.out -covermode=atomic -coverpkg=.
-          ${GOBIN}/go-test-coverage --config=./.testcoverage.yml
+          ./scripts/run-tests.bash
