@@ -1,7 +1,6 @@
 package api
 
 import (
-	"fmt"
 	"reflect"
 	"testing"
 )
@@ -44,15 +43,6 @@ func TestEmptyApiKeyError(t *testing.T) {
 	desiredErrString := "Api key passed is empty"
 	if keyErr.Error() != desiredErrString {
 		t.Errorf("Unexpected error string!\nExpected: %v\nActual: %v", desiredErrString, keyErr.Error())
-	}
-}
-
-func TestGenericGitError(t *testing.T) {
-	gitCmd := []string{"git", "status"}
-	gitErr := GenericGitError{command: gitCmd}
-	desiredErrString := fmt.Sprintf("Git operation failed:\n%v", gitCmd)
-	if gitErr.Error() != desiredErrString {
-		t.Errorf("Unexpected error string!\nExpected: %v\nActual: %v", desiredErrString, gitErr.Error())
 	}
 }
 

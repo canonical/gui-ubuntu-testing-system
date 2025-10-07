@@ -33,7 +33,7 @@ func RequestEndpoint(c *gin.Context) { // coverage-ignore
 			c.IndentedJSON(http.StatusBadRequest, gin.H{"message": err.Error()})
 		case api.NonWhitelistedDomainError:
 			c.IndentedJSON(http.StatusForbidden, gin.H{"message": err.Error()})
-		case api.GenericGitError:
+		case utils.GenericGitError:
 			c.IndentedJSON(http.StatusBadRequest, gin.H{"message": err.Error()})
 		case api.PlanFileNonexistentError:
 			c.IndentedJSON(http.StatusBadRequest, gin.H{"message": err.Error()})

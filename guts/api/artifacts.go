@@ -61,7 +61,7 @@ func CollateArtifacts(uuidToFind string, driver database.DbDriver, gutsCfg GutsA
 		return gzippedTarBytes, err
 	}
 
-	gzippedTarBytes, err = GzipTarArchiveBytes(allFilesInTarBytes)
+	gzippedTarBytes, err = utils.GzipTarArchiveBytes(allFilesInTarBytes)
 	if err != nil {
 		return gzippedTarBytes, err
 	}
@@ -176,22 +176,6 @@ func WriteTarballToCache(tarBall []byte, uuid string, uuidCacheDir string, cache
 	}
 
 	return nil
-}
-
-func GzipTarArchiveBytes(tarArchive []byte) ([]byte, error) {
-	var buf bytes.Buffer
-	var returnBytes []byte
-	gz := gzip.NewWriter(&buf)
-	_, err := gz.Write(tarArchive)
-	if err != nil { // coverage-ignore
-		return returnBytes, err
-	}
-	err = gz.Close()
-	if err != nil { // coverage-ignore
-		return returnBytes, err
-	}
-	returnBytes = buf.Bytes()
-	return returnBytes, nil
 }
 
 func CreateOutputDirectoriesFromUrls(urls []string) ([]string, error) {

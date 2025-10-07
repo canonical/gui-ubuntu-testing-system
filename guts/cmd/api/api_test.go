@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"github.com/gin-gonic/gin"
 	"guts.ubuntu.com/v2/api"
 	"guts.ubuntu.com/v2/utils"
@@ -63,17 +64,25 @@ func TestJobEndpointInvalidUuid(t *testing.T) {
 }
 
 func TestArtifactsEndpoint(t *testing.T) {
-	utils.ServeDirectory("/../postgres/test-data/test-files/")
+	fmt.Println("Hello")
+	servingProcess := utils.ServeRelativeDirectory("/../../../postgres/test-data/test-files/")
+	defer utils.DeferredErrCheck(servingProcess.Kill)
+	fmt.Println("Are we getting through this")
+
 	r := SetUpRouter()
 	r.GET("/artifacts/:uuid/results.tar.gz", ArtifactsEndpoint)
 	Uuid := "27549483-e8f5-497f-a05d-e6d8e67a8e8a"
 	reqFound, _ := http.NewRequest("GET", "/artifacts/"+Uuid+"/results.tar.gz", nil)
 	w := httptest.NewRecorder()
 	r.ServeHTTP(w, reqFound)
+
+	fmt.Println("Request served")
+
 	expectedCode := 200
 	if !reflect.DeepEqual(w.Code, expectedCode) {
 		t.Errorf("Unexpected exit code!\nExpected: %v\nActual: %v", expectedCode, w.Code)
 	}
+	fmt.Println("Are we getting here?")
 }
 
 func TestArtifactsEndpointUnknownUuid(t *testing.T) {

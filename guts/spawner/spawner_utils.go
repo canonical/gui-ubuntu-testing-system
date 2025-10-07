@@ -65,18 +65,6 @@ func FindRowIdForUuidInStateRequested(uuid string, Driver database.DbDriver) (in
 	return id, nil
 }
 
-func SetTestStateTo(id int, state string, Driver database.DbDriver) error {
-	// stateUpdateQuery := fmt.Sprintf(`UPDATE tests SET state='%v' WHERE id='%v'`, state, id)
-	stateUpdateQuery := fmt.Sprintf(`UPDATE tests SET state='%v' WHERE id=%v`, state, id)
-	err := Driver.UpdateRow(stateUpdateQuery)
-	return err
-}
-
-func UpdateUpdatedAt(id int, Driver database.DbDriver) error {
-	err := Driver.TestsUpdateUpdatedAt(id)
-	return err
-}
-
 func SetVncAddressForId(id int, Driver database.DbDriver) error {
 	addressString := fmt.Sprintf("%v:%v", VncHost, VncPort)
 	updateQuery := fmt.Sprintf(`UPDATE tests SET vnc_address='%v' WHERE id='%v'`, addressString, id)
@@ -264,12 +252,12 @@ func SpawnerLoop(Driver database.DbDriver, SpawnerCfg GutsSpawnerConfig) error {
 		return err
 	}
 	// Set the test state to spawning to indicate we are spawning the VM
-	err = SetTestStateTo(id, "spawning", Driver)
+	err = Driver.SetTestStateTo(id, "spawning")
 	if err != nil {
 		return err
 	}
 	// Update the heartbeat timestamp
-	err = UpdateUpdatedAt(id, Driver)
+	err = database.UpdateUpdatedAt(id, Driver)
 	if err != nil {
 		return err
 	}
@@ -279,7 +267,7 @@ func SpawnerLoop(Driver database.DbDriver, SpawnerCfg GutsSpawnerConfig) error {
 		return err
 	}
 	// Update the heartbeat timestamp
-	err = UpdateUpdatedAt(id, Driver)
+	err = database.UpdateUpdatedAt(id, Driver)
 	if err != nil {
 		return err
 	}
@@ -318,12 +306,12 @@ func SpawnerLoop(Driver database.DbDriver, SpawnerCfg GutsSpawnerConfig) error {
 		return err
 	}
 	// set state to spawned
-	err = SetTestStateTo(id, "spawned", Driver)
+	err = Driver.SetTestStateTo(id, "spawned")
 	if err != nil {
 		return err
 	}
 	// update the heartbeat ts
-	err = UpdateUpdatedAt(id, Driver)
+	err = database.UpdateUpdatedAt(id, Driver)
 	if err != nil {
 		return err
 	}
@@ -344,17 +332,21 @@ func SpawnerLoop(Driver database.DbDriver, SpawnerCfg GutsSpawnerConfig) error {
 		if slices.Contains(finishStates, state) {
 			finished = true
 		}
-		// update the heartbeat ts
-		err = UpdateUpdatedAt(id, Driver)
-		if err != nil {
-			return err
+		// Only update the heartbeat timestamp
+		// when the runner is not already running the test
+		if state != "running" {
+			// update the heartbeat ts
+			err = database.UpdateUpdatedAt(id, Driver)
+			if err != nil {
+				return err
+			}
 		}
 		// wait
 		time.Sleep(heartbeatDuration)
 	}
 	if !finished {
 		// we reach this if the VM dies unexpectedly, set the state back to requested
-		err = SetTestStateTo(id, "requested", Driver)
+		err = Driver.SetTestStateTo(id, "requested")
 		return err
 	}
 	// kill the VM

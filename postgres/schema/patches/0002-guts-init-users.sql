@@ -40,6 +40,7 @@ ALTER USER guts_scheduler WITH LOGIN;
 
 -- runner permissions
 GRANT SELECT, UPDATE ON tests TO guts_runner;
+GRANT SELECT ON jobs TO guts_runner;
 ALTER USER guts_runner WITH LOGIN;
 
 -- reporter permissions

@@ -8,7 +8,9 @@ import (
 )
 
 func TestGetRemoteShaSum(t *testing.T) {
-	utils.ServeDirectory("/../../postgres/test-data/test-files/")
+	servingProcess := utils.ServeRelativeDirectory("/../../postgres/test-data/test-files/")
+	defer utils.DeferredErrCheck(servingProcess.Kill)
+
 	imageUrl := "http://localhost:9999/questing-mini-iso-amd64.iso"
 	shasum, err := GetRemoteShaSum(imageUrl)
 	utils.CheckError(err)
@@ -19,7 +21,9 @@ func TestGetRemoteShaSum(t *testing.T) {
 }
 
 func TestGetRemoteShaSumFailure(t *testing.T) {
-	utils.ServeDirectory("/../../postgres/test-data/test-files/")
+	servingProcess := utils.ServeRelativeDirectory("/../../postgres/test-data/test-files/")
+	defer utils.DeferredErrCheck(servingProcess.Kill)
+
 	imageUrl := "http://planetexpress.com/questing-mini-iso-amd64.iso"
 	_, err := GetRemoteShaSum(imageUrl)
 	expectedErrString := fmt.Sprintf("Couldn't acquire shasum of image at %v", imageUrl)
@@ -29,7 +33,9 @@ func TestGetRemoteShaSumFailure(t *testing.T) {
 }
 
 func TestCdImageGetShasumOfImage(t *testing.T) {
-	utils.ServeDirectory("/../../postgres/test-data/test-files/")
+	servingProcess := utils.ServeRelativeDirectory("/../../postgres/test-data/test-files/")
+	defer utils.DeferredErrCheck(servingProcess.Kill)
+
 	imageUrl := "http://localhost:9999/questing-mini-iso-amd64.iso"
 	shasum, err := CdImageGetShasumOfImage(imageUrl)
 	utils.CheckError(err)
@@ -51,7 +57,9 @@ func TestCdImageGetShasumOfImageFailure(t *testing.T) {
 }
 
 func TestCdImageDownloadCheckSumFileForImage(t *testing.T) {
-	utils.ServeDirectory("/../../postgres/test-data/test-files/")
+	servingProcess := utils.ServeRelativeDirectory("/../../postgres/test-data/test-files/")
+	defer utils.DeferredErrCheck(servingProcess.Kill)
+
 	imageUrl := "http://localhost:9999/questing-mini-iso-amd64.iso"
 	shasums, err := CdImageDownloadCheckSumFileForImage(imageUrl)
 	utils.CheckError(err)

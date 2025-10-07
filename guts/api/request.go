@@ -182,7 +182,7 @@ func ValidateTestData(testsRepoBranch, testsRepo string, testPlans []string) err
 		if err != nil { // coverage-ignore
 			return err
 		}
-		return GenericGitError{command: shallowCloneCmd.Args}
+		return utils.GenericGitError{Command: shallowCloneCmd.Args}
 	}
 
 	sparseCheckoutCmd := exec.Command(
@@ -198,7 +198,7 @@ func ValidateTestData(testsRepoBranch, testsRepo string, testPlans []string) err
 		if rmErr != nil {
 			return rmErr
 		}
-		return GenericGitError{command: sparseCheckoutCmd.Args}
+		return utils.GenericGitError{Command: sparseCheckoutCmd.Args}
 	}
 
 	gitCheckoutCmd := exec.Command("git", "checkout")
@@ -208,7 +208,7 @@ func ValidateTestData(testsRepoBranch, testsRepo string, testPlans []string) err
 		if rmErr != nil {
 			return rmErr
 		}
-		return GenericGitError{command: gitCheckoutCmd.Args}
+		return utils.GenericGitError{Command: gitCheckoutCmd.Args}
 	}
 
 	for _, testPlan := range testPlans {

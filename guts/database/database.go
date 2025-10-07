@@ -18,6 +18,13 @@ func (e PostgresServiceNotUpError) Error() string {
 	return "Unit postgresql.service is not active."
 }
 
+// //////////////////////////////////////////////////////////////////////////////
+// Helper functions outside of the driver
+func UpdateUpdatedAt(id int, Driver DbDriver) error {
+	err := Driver.TestsUpdateUpdatedAt(id)
+	return err
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 // basic functionality for the driver struct
 
@@ -56,6 +63,7 @@ func NewOperationInterface(driver DbDriver) (DbDriver, error) {
 // section utilising the interfaces below in the driver struct
 
 func (d DbDriver) QueryRow(table, queryField, queryValue string, fields []string) (*sql.Row, error) { // coverage-ignore
+	// rename interface to client
 	row, err := d.Interface.InterfaceQueryRow(table, queryField, queryValue, fields)
 	return row, err
 }
@@ -82,6 +90,12 @@ func (d DbDriver) UpdateRow(query string) error {
 
 func (d DbDriver) TestsUpdateUpdatedAt(id int) error {
 	err := d.Interface.UpdateUpdatedAt(id)
+	return err
+}
+
+func (d DbDriver) SetTestStateTo(id int, state string) error {
+	stateUpdateQuery := fmt.Sprintf(`UPDATE tests SET state='%v' WHERE id=%v`, state, id)
+	err := d.UpdateRow(stateUpdateQuery)
 	return err
 }
 

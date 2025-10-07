@@ -1,11 +1,15 @@
 package utils
 
 import (
+	"archive/tar"
+	"bytes"
+	"compress/gzip"
+	"crypto/md5"
 	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
 	"io"
-	"log"
+	// "log"
 	"net"
 	"net/http"
 	"net/url"
@@ -17,6 +21,14 @@ import (
 	"time"
 )
 
+type GenericGitError struct {
+	Command []string
+}
+
+func (g GenericGitError) Error() string {
+	return fmt.Sprintf("Git operation failed:\n%v", g.Command)
+}
+
 type InvalidUuidError struct {
 	uuid string
 }
@@ -27,7 +39,8 @@ func (e InvalidUuidError) Error() string {
 
 func CheckError(err error) { // coverage-ignore
 	if err != nil {
-		log.Fatal(err.Error())
+		panic(err)
+		// log.Fatal(err.Error())
 	}
 }
 
@@ -140,6 +153,12 @@ func Sha256sumOfString(inputString string) string {
 	return hex.EncodeToString(hasher.Sum(nil))
 }
 
+func Md5SumOfBytes(inputBytes []byte) string {
+	hasher := md5.New()
+	hasher.Write(inputBytes)
+	return hex.EncodeToString(hasher.Sum(nil))
+}
+
 func GetProtocolPrefix(port int) string {
 	switch port {
 	default:
@@ -157,17 +176,29 @@ func GetFileNameFromUrl(url string) string {
 	return fileName
 }
 
-// this function is just used for testing, so we don't test it
-func ServeDirectory(relativeDirToServe string) { // coverage-ignore
+func ServeRelativeDirectory(relativeDir string) *os.Process { // coverage-ignore
 	pwd, err := os.Getwd()
 	CheckError(err)
+	testFilesDir := pwd + relativeDir
+	process := ServeDirectory(testFilesDir)
+	return process
+}
+
+// this function is just used for testing, so we don't test it
+// this process doesn't get killed - ffs
+func ServeDirectory(testFilesDir string) *os.Process { // coverage-ignore
 	port := "9999"
-	testFilesDir := pwd + relativeDirToServe
+
 	serveCmd := exec.Command("php", "-S", "localhost:"+port)
 	serveCmd.Dir = testFilesDir
-	go serveCmd.Run() //nolint:all
+
+	err := serveCmd.Start()
+	CheckError(err)
+
 	for i := 0; i < 60; i++ {
-		timeout := time.Second * 5
+		// I think this long timeout was leftover from debugging.
+		// timeout := time.Second * 5
+		timeout := time.Second
 		conn, err := net.DialTimeout("tcp", net.JoinHostPort("localhost", port), timeout)
 		if err != nil {
 			time.Sleep(timeout)
@@ -175,9 +206,133 @@ func ServeDirectory(relativeDirToServe string) { // coverage-ignore
 			if conn != nil {
 				err := conn.Close()
 				CheckError(err)
-				return
+				time.Sleep(time.Second)
+				return serveCmd.Process
 			}
 		}
 	}
+
 	CheckError(fmt.Errorf("Port never came up when trying to serve directory with command:\n%v", serveCmd))
+	return serveCmd.Process
+}
+
+func WriteToTar(path string, tw *tar.Writer, fi os.FileInfo) error {
+	// Open the path
+	fr, err := os.Open(path)
+	if err != nil { // coverage-ignore
+		return err
+	}
+	defer DeferredErrCheck(fr.Close)
+
+	copyData := true
+
+	h := new(tar.Header)
+	h.Name = path
+	h.Size = fi.Size()
+	h.Mode = int64(fi.Mode())
+	h.ModTime = fi.ModTime()
+	h.Typeflag = tar.TypeReg
+	if fi.IsDir() {
+		h.Typeflag = tar.TypeDir
+		copyData = false
+	}
+	err = tw.WriteHeader(h)
+	if err != nil { // coverage-ignore
+		return err
+	}
+
+	if copyData {
+		_, err = io.Copy(tw, fr)
+		if err != nil { // coverage-ignore
+			return err
+		}
+	}
+	return nil
+}
+
+func TraverseDirectory(dirPath string, tw *tar.Writer) error {
+	// Open the directory
+	dir, err := os.Open(dirPath)
+	if err != nil { // coverage-ignore
+		return err
+	}
+
+	// read all the files/dir in it
+	fis, err := dir.Readdir(0)
+	if err != nil { // coverage-ignore
+		return err
+	}
+
+	DeferredErrCheck(dir.Close)
+
+	for _, fi := range fis {
+		curPath := dirPath + "/" + fi.Name()
+		err = WriteToTar(curPath, tw, fi)
+		// typically, we wouldn't ignore this err handling,
+		// but WriteToTar only fails due to golang std
+		// library calls failing, so it's idiomatic
+		// to not test these kinds of errors in this case.
+		if err != nil { // coverage-ignore
+			return err
+		}
+		if fi.IsDir() {
+			err = TraverseDirectory(curPath, tw)
+			if err != nil {
+				return err
+			}
+		}
+	}
+	return nil
+}
+
+func TarUpDirectory(dirToTar string) ([]byte, error) {
+	var tarData []byte
+	tarBuffer := &bytes.Buffer{}
+	tarWriter := tar.NewWriter(tarBuffer)
+	err := TraverseDirectory(dirToTar, tarWriter)
+
+	// close tar writer
+	err = tarWriter.Close()
+	if err != nil { // coverage-ignore
+		return tarData, err
+	}
+
+	tarData = tarBuffer.Bytes()
+	return tarData, err
+}
+
+func GzipTarArchiveBytes(tarArchive []byte) ([]byte, error) {
+	var buf bytes.Buffer
+	var returnBytes []byte
+	gz := gzip.NewWriter(&buf)
+	_, err := gz.Write(tarArchive)
+	if err != nil { // coverage-ignore
+		return returnBytes, err
+	}
+	err = gz.Close()
+	if err != nil { // coverage-ignore
+		return returnBytes, err
+	}
+	returnBytes = buf.Bytes()
+	return returnBytes, nil
+}
+
+func EnsureGetEnv(envVar string) (string, error) {
+	envValue := os.Getenv(envVar)
+	if envValue == "" { // coverage-ignore
+		return envValue, fmt.Errorf("tried to get %v environment variable, but it was empty or unset", envVar)
+	}
+	return envValue, nil
+}
+
+func StartProcess(processArgs []string, envVars *[]string) (*exec.Cmd, error) {
+	cmd := exec.Command(processArgs[0], processArgs[1:]...)
+	cmd.Env = os.Environ()
+	if envVars != nil {
+		for _, entry := range *envVars {
+			cmd.Env = append(cmd.Env, entry)
+		}
+	}
+	err := cmd.Start()
+	return cmd, err
 }

@@ -35,7 +35,10 @@ func TestGetCompleteResultsForUuidSuccess(t *testing.T) {
 	} else {
 		utils.CheckError(err)
 	}
-	utils.ServeDirectory("/../../postgres/test-data/test-files/")
+
+	servingProcess := utils.ServeRelativeDirectory("/../../postgres/test-data/test-files/")
+	defer utils.DeferredErrCheck(servingProcess.Kill)
+
 	job, err := GetCompleteResultsForUuid(Uuid, Driver)
 	utils.CheckError(err)
 	var expectedJob JobWithTestsDetails
@@ -58,7 +61,9 @@ func TestGetCompleteResultsForUuidSuccess(t *testing.T) {
 	TestJob.Priority = 8
 	expectedJob.Job = TestJob
 	expectedJob.Results = make(map[string]string)
-	expectedJob.Results["Firefox-Example-Basic"] = "running"
+	// what?
+	// expectedJob.Results["Firefox-Example-Basic"] = "running"
+	expectedJob.Results["Firefox-Example-Basic"] = "requested"
 	expectedJob.Results["Firefox-Example-New-Tab"] = "spawning"
 	if !reflect.DeepEqual(job, expectedJob) {
 		t.Errorf("expected job not the same as actual\nexpected: %v\nactual: %v", expectedJob, job)

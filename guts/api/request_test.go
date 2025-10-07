@@ -165,7 +165,9 @@ func TestValidateArtifactUrlDeb(t *testing.T) {
 	_, _, args, err := Setup()
 	utils.CheckError(err)
 	// serve a deb
-	utils.ServeDirectory("/../../postgres/test-data/test-files/")
+	servingProcess := utils.ServeRelativeDirectory("/../../postgres/test-data/test-files/")
+	defer utils.DeferredErrCheck(servingProcess.Kill)
+
 	// create the url
 	testUrl := "http://localhost:9999/hello_2.10-3build1_amd64.deb"
 	// validate the url
@@ -177,7 +179,9 @@ func TestValidateArtifactUrlSnap(t *testing.T) {
 	_, _, args, err := Setup()
 	utils.CheckError(err)
 	// serve a snap
-	utils.ServeDirectory("/../../postgres/test-data/test-files/")
+	servingProcess := utils.ServeRelativeDirectory("/../../postgres/test-data/test-files/")
+	defer utils.DeferredErrCheck(servingProcess.Kill)
+
 	// create the url
 	testUrl := "http://localhost:9999/hello_42.snap"
 	// validate the url
@@ -189,7 +193,9 @@ func TestValidateArtifactUrlInvalidArtifactType(t *testing.T) {
 	_, _, args, err := Setup()
 	utils.CheckError(err)
 	// serve a snap
-	utils.ServeDirectory("/../../postgres/test-data/test-files/")
+	servingProcess := utils.ServeRelativeDirectory("/../../postgres/test-data/test-files/")
+	defer utils.DeferredErrCheck(servingProcess.Kill)
+
 	// create the url
 	testUrl := "http://localhost:9999/hello_42.rpm"
 	// validate the url
@@ -203,7 +209,9 @@ func TestValidateArtifactUrlNonexistentUrl(t *testing.T) {
 	_, _, args, err := Setup()
 	utils.CheckError(err)
 	// serve a snap
-	utils.ServeDirectory("/../../postgres/test-data/test-files/")
+	servingProcess := utils.ServeRelativeDirectory("/../../postgres/test-data/test-files/")
+	defer utils.DeferredErrCheck(servingProcess.Kill)
+
 	// create the url
 	testUrl := "http://localhost:9999/no-exist.deb"
 	// validate the url
@@ -217,7 +225,9 @@ func TestValidateArtifactUrlUnacceptableDomain(t *testing.T) {
 	_, _, args, err := Setup()
 	utils.CheckError(err)
 	// serve a snap
-	utils.ServeDirectory("/../../postgres/test-data/test-files/")
+	servingProcess := utils.ServeRelativeDirectory("/../../postgres/test-data/test-files/")
+	defer utils.DeferredErrCheck(servingProcess.Kill)
+
 	// create the url
 	testUrl := "http://farnsworth:9999/no-exist.deb"
 	// validate the url
@@ -231,7 +241,9 @@ func TestValidateTestbedUrlIso(t *testing.T) {
 	_, _, args, err := Setup()
 	utils.CheckError(err)
 	// serve an iso
-	utils.ServeDirectory("/../../postgres/test-data/test-files/")
+	servingProcess := utils.ServeRelativeDirectory("/../../postgres/test-data/test-files/")
+	defer utils.DeferredErrCheck(servingProcess.Kill)
+
 	// create the url
 	testUrl := "http://localhost:9999/questing-mini-iso-amd64.iso"
 	// validate the url
@@ -243,7 +255,9 @@ func TestValidateTestbedUrlImg(t *testing.T) {
 	_, _, args, err := Setup()
 	utils.CheckError(err)
 	// serve an iso
-	utils.ServeDirectory("/../../postgres/test-data/test-files/")
+	servingProcess := utils.ServeRelativeDirectory("/../../postgres/test-data/test-files/")
+	defer utils.DeferredErrCheck(servingProcess.Kill)
+
 	// create the url
 	testUrl := "http://localhost:9999/testimg.img"
 	// validate the url

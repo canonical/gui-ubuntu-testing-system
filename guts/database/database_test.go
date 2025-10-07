@@ -138,3 +138,31 @@ func TestNewDbDriverBadDriver(t *testing.T) {
 		t.Errorf("Unexpected error string!\nExpected: %v\nActual: %v", expectedErrString, err.Error())
 	}
 }
+
+func TestSetTestStateTo(t *testing.T) {
+	Driver, err := TestDbDriver("guts_spawner", "guts_spawner")
+	if SkipTestIfPostgresInactive(err) {
+		t.Skip("Skipping test as postgresql service is not up")
+	} else {
+		utils.CheckError(err)
+	}
+	rowId := 13
+	err = Driver.SetTestStateTo(rowId, "requested")
+	utils.CheckError(err)
+	err = Driver.SetTestStateTo(rowId, "running")
+	utils.CheckError(err)
+	err = Driver.SetTestStateTo(rowId, "requested")
+	utils.CheckError(err)
+}
+
+func TestUpdateUpdatedAt(t *testing.T) {
+	Driver, err := TestDbDriver("guts_spawner", "guts_spawner")
+	if SkipTestIfPostgresInactive(err) {
+		t.Skip("Skipping test as postgresql service is not up")
+	} else {
+		utils.CheckError(err)
+	}
+	rowId := 1
+	err = UpdateUpdatedAt(rowId, Driver)
+	utils.CheckError(err)
+}

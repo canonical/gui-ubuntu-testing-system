@@ -31,12 +31,13 @@ func TestFindArtifactUrlsByUuid(t *testing.T) {
 	expectedUrls[2] = "https://guts.ubuntu.com/artifacts/eccd3988-490d-4414-be97-605d1ac81073/"
 
 	if !reflect.DeepEqual(result_urls, expectedUrls) {
-		t.Errorf("Results url as expected!\nExpected: %v\nActual: %v", expectedUrls, result_urls)
+		t.Errorf("Results url not as expected!\nExpected: %v\nActual: %v", expectedUrls, result_urls)
 	}
 }
 
 func TestCollateArtifacts(t *testing.T) {
-	utils.ServeDirectory("/../../postgres/test-data/test-files/")
+	servingProcess := utils.ServeRelativeDirectory("/../../postgres/test-data/test-files/")
+	defer utils.DeferredErrCheck(servingProcess.Kill)
 
 	// Get output artifacts for given uuid
 	Uuid := "27549483-e8f5-497f-a05d-e6d8e67a8e8a"
@@ -95,6 +96,10 @@ func TestCollateArtifactsDownloadFails(t *testing.T) {
 	} else {
 		utils.CheckError(err)
 	}
+
+	servingProcess := utils.ServeRelativeDirectory("/../../postgres/test-data/test-files/")
+	defer utils.DeferredErrCheck(servingProcess.Kill)
+
 	artifactsTarGz, err := CollateArtifacts(Uuid, Driver, GutsCfg)
 	if len(artifactsTarGz) != 0 {
 		t.Errorf("Variable should have length 0 but instead has length %v", len(artifactsTarGz))
@@ -126,7 +131,9 @@ func TestCreateOutputDirectoriesFromUrls(t *testing.T) {
 }
 
 func TestDownloadTarFiles(t *testing.T) {
-	utils.ServeDirectory("/../../postgres/test-data/test-files/")
+	servingProcess := utils.ServeRelativeDirectory("/../../postgres/test-data/test-files/")
+	defer utils.DeferredErrCheck(servingProcess.Kill)
+
 	artifactUrls := []string{
 		"http://localhost:9999/res-1.tar.gz",
 		"http://localhost:9999/res-2.tar.gz",
@@ -307,16 +314,6 @@ func TestWriteTarballToCacheAlreadyExists(t *testing.T) {
 	// okay, now it's written ... run again and ensure no failure?
 	err = WriteTarballToCache(tarball, thisUuid, thisDir, fmt.Sprintf("%v/results.tar.gz", thisDir), fmt.Sprintf("%v/%v.last_downloaded", thisDir, thisUuid))
 	utils.CheckError(err)
-}
-
-func TestGzipTarArchiveBytes(t *testing.T) {
-	myBytes := []byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10}
-	compressedBytes, err := GzipTarArchiveBytes(myBytes)
-	utils.CheckError(err)
-	targetBytes := []byte{31, 139, 8, 0, 0, 0, 0, 0, 0, 255, 98, 100, 98, 102, 97, 101, 99, 231, 224, 228, 2, 4, 0, 0, 255, 255, 123, 87, 32, 37, 10, 0, 0, 0}
-	if !reflect.DeepEqual(compressedBytes, targetBytes) {
-		t.Errorf("Unexpected output bytes after gzip compression!\nExpected: %v\nActual: %v", targetBytes, compressedBytes)
-	}
 }
 
 func TestTarUpFilesInGivenDirectories(t *testing.T) {

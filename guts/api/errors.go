@@ -41,14 +41,6 @@ func (e EmptyApiKeyError) Error() string {
 	return "Api key passed is empty"
 }
 
-type GenericGitError struct {
-	command []string
-}
-
-func (g GenericGitError) Error() string {
-	return fmt.Sprintf("Git operation failed:\n%v", g.command)
-}
-
 type PlanFileNonexistentError struct {
 	planFile string
 }

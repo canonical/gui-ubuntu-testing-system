@@ -1,13 +1,12 @@
 package spawner
 
 import (
+	"guts.ubuntu.com/v2/database"
+	"guts.ubuntu.com/v2/utils"
 	"os"
 	"reflect"
 	"strings"
 	"testing"
-	// "fmt"
-	"guts.ubuntu.com/v2/database"
-	"guts.ubuntu.com/v2/utils"
 )
 
 func TestFindHighestPrioUuid(t *testing.T) {
@@ -35,7 +34,7 @@ func TestFindRowIdForUuidInStateRequested(t *testing.T) {
 	searchUuid := "4ce9189f-561a-4886-aeef-1836f28b073b"
 	rowId, err := FindRowIdForUuidInStateRequested(searchUuid, Driver)
 	utils.CheckError(err)
-	expectedRowId := 1
+	expectedRowId := 3
 	if rowId != expectedRowId {
 		t.Errorf("Unexpected row id! Expected: %v\nActual: %v", expectedRowId, rowId)
 	}
@@ -59,20 +58,6 @@ func TestFindRowIdForUuidInStateRequestedFailure(t *testing.T) {
 	}
 }
 
-func TestSetTestStateTo(t *testing.T) {
-	Driver, err := database.TestDbDriver("guts_spawner", "guts_spawner")
-	if database.SkipTestIfPostgresInactive(err) {
-		t.Skip("Skipping test as postgresql service is not up")
-	} else {
-		utils.CheckError(err)
-	}
-	rowId := 1
-	err = SetTestStateTo(rowId, "running", Driver)
-	utils.CheckError(err)
-	err = SetTestStateTo(rowId, "requested", Driver)
-	utils.CheckError(err)
-}
-
 func TestUpdateUpdatedAt(t *testing.T) {
 	Driver, err := database.TestDbDriver("guts_spawner", "guts_spawner")
 	if database.SkipTestIfPostgresInactive(err) {
@@ -81,7 +66,7 @@ func TestUpdateUpdatedAt(t *testing.T) {
 		utils.CheckError(err)
 	}
 	rowId := 1
-	err = UpdateUpdatedAt(rowId, Driver)
+	err = database.UpdateUpdatedAt(rowId, Driver)
 	utils.CheckError(err)
 }
 
@@ -153,7 +138,10 @@ func TestGetTestRequirementsBadRowId(t *testing.T) {
 func TestDownloadImageSuccess(t *testing.T) {
 	spawnerCfg, err := ParseConfig("./guts-spawner.yaml")
 	utils.CheckError(err)
-	utils.ServeDirectory("/../../postgres/test-data/test-files/")
+
+	servingProcess := utils.ServeRelativeDirectory("/../../postgres/test-data/test-files/")
+	defer utils.DeferredErrCheck(servingProcess.Kill)
+
 	imageUrl := "http://localhost:9999/questing-mini-iso-amd64.iso"
 	imagePath, err := DownloadImage(imageUrl, spawnerCfg)
 	utils.CheckError(err)
@@ -168,7 +156,10 @@ func TestDownloadImageSuccess(t *testing.T) {
 func TestDownloadImageAlreadyExists(t *testing.T) {
 	spawnerCfg, err := ParseConfig("./guts-spawner.yaml")
 	utils.CheckError(err)
-	utils.ServeDirectory("/../../postgres/test-data/test-files/")
+
+	servingProcess := utils.ServeRelativeDirectory("/../../postgres/test-data/test-files/")
+	defer utils.DeferredErrCheck(servingProcess.Kill)
+
 	imageUrl := "http://localhost:9999/questing-mini-iso-amd64.iso"
 	imagePath, err := DownloadImage(imageUrl, spawnerCfg)
 	utils.CheckError(err)
@@ -183,7 +174,9 @@ func TestDownloadImageAlreadyExists(t *testing.T) {
 }
 
 func TestIdenticalLocalAndRemoteShasum(t *testing.T) {
-	utils.ServeDirectory("/../../postgres/test-data/test-files/")
+	servingProcess := utils.ServeRelativeDirectory("/../../postgres/test-data/test-files/")
+	defer utils.DeferredErrCheck(servingProcess.Kill)
+
 	imageUrl := "http://localhost:9999/resting-mini-iso-amd64.iso"
 	imagePath := "/srv/guts/images/resting-mini-iso-amd64.iso"
 	if IdenticalLocalAndRemoteShasum(imageUrl, imagePath) {
@@ -192,7 +185,9 @@ func TestIdenticalLocalAndRemoteShasum(t *testing.T) {
 }
 
 func TestIdenticalLocalAndRemoteShasumNoLocal(t *testing.T) {
-	utils.ServeDirectory("/../../postgres/test-data/test-files/")
+	servingProcess := utils.ServeRelativeDirectory("/../../postgres/test-data/test-files/")
+	defer utils.DeferredErrCheck(servingProcess.Kill)
+
 	imageUrl := "http://localhost:9999/questing-mini-iso-amd64.iso"
 	imagePath := "/srv/guts/images/questing-mini-iso-amd64.iso"
 	if IdenticalLocalAndRemoteShasum(imageUrl, imagePath) {
@@ -201,7 +196,9 @@ func TestIdenticalLocalAndRemoteShasumNoLocal(t *testing.T) {
 }
 
 func TestIdenticalLocalAndRemoteShasumWrongLocal(t *testing.T) {
-	utils.ServeDirectory("/../../postgres/test-data/test-files/")
+	servingProcess := utils.ServeRelativeDirectory("/../../postgres/test-data/test-files/")
+	defer utils.DeferredErrCheck(servingProcess.Kill)
+
 	imageUrl := "http://localhost:9999/questing-mini-iso-amd64.iso"
 	imagePath := "/srv/guts/images/questing-mini-iso-amd64.iso"
 	dummyBytes := []byte("Welcome to guts")
@@ -265,7 +262,7 @@ func TestCreateQcowDisk(t *testing.T) {
 }
 
 func TestGetTestState(t *testing.T) {
-	id := 4
+	id := 15
 	Driver, err := database.TestDbDriver("guts_spawner", "guts_spawner")
 	if database.SkipTestIfPostgresInactive(err) {
 		t.Skip("Skipping test as postgresql service is not up")
@@ -273,14 +270,17 @@ func TestGetTestState(t *testing.T) {
 		utils.CheckError(err)
 	}
 
+	err = Driver.SetTestStateTo(id, "fail")
+	utils.CheckError(err)
+
 	state, err := GetTestState(id, Driver)
 	utils.CheckError(err)
-	expectedState := "requested"
+	expectedState := "fail"
 	if state != expectedState {
 		t.Errorf("State for row %v should be %v but is %v", id, expectedState, state)
 	}
 
-	err = SetTestStateTo(id, "spawning", Driver)
+	err = Driver.SetTestStateTo(id, "spawning")
 	utils.CheckError(err)
 
 	state, err = GetTestState(id, Driver)
@@ -291,7 +291,7 @@ func TestGetTestState(t *testing.T) {
 		t.Errorf("State for row %v should be %v but is %v", id, expectedState, state)
 	}
 
-	err = SetTestStateTo(id, "requested", Driver)
+	err = Driver.SetTestStateTo(id, "fail")
 	utils.CheckError(err)
 }
 
