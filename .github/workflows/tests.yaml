@@ -54,8 +54,8 @@ jobs:
           tests_rows=$(psql --no-align --quiet --tuples-only --user postgres guts -c 'SELECT * FROM tests;' | wc -l)
           users_rows=$(psql --no-align --quiet --tuples-only --user postgres guts -c 'SELECT * FROM users;' | wc -l)
           reporter_rows=$(psql --no-align --quiet --tuples-only --user postgres guts -c 'SELECT * FROM reporter;' | wc -l)
-          [[ "${jobs_rows}" == "63" ]] || exit 1
-          [[ "${tests_rows}" == "83" ]] || exit 1
+          [[ "${jobs_rows}" == "64" ]] || exit 1
+          [[ "${tests_rows}" == "84" ]] || exit 1
           [[ "${users_rows}" == "4" ]] || exit 1
           [[ "${reporter_rows}" == "55" ]] || exit 1
       - name: Set /srv/ permissions
