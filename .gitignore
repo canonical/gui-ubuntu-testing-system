@@ -1,5 +1,3 @@
-guts/api/main
-guts/api/coverage.out
 guts/api/cover.out
 guts/coverage.out
 guts/cover.out
@@ -11,5 +9,14 @@ guts/spawner/coverage.out
 guts/spawner/cover.out
 guts/cmd/spawner/cover.out
 guts/cmd/spawner/coverage.out
+guts/cmd/spawner/main
 guts/cmd/api/cover.out
 guts/cmd/api/coverage.out
+guts/cmd/api/main
+guts/cmd/runner/cover.out
+guts/cmd/runner/coverage.out
+guts/cmd/runner/main
+guts/runner/cover.out
+guts/runner/coverage.out
+guts/storage/cover.out
+guts/storage/coverage.out
