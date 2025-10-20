@@ -1,0 +1,58 @@
+package api
+
+import (
+	"fmt"
+)
+
+type UuidNotFoundError struct {
+	uuid string
+}
+
+func (e UuidNotFoundError) Error() string {
+	return fmt.Sprintf("No jobs with uuid %v found!", e.uuid)
+}
+
+type BadUrlError struct {
+	url  string
+	code int
+}
+
+func (b BadUrlError) Error() string {
+	return fmt.Sprintf("Url %v returned %v", b.url, b.code)
+}
+
+type NonWhitelistedDomainError struct {
+	url string
+}
+
+func (n NonWhitelistedDomainError) Error() string {
+	return fmt.Sprintf("Url %v not from accepted list of domains", n.url)
+}
+
+type ApiKeyNotAcceptedError struct{}
+
+func (a ApiKeyNotAcceptedError) Error() string {
+	return "Api key not accepted!"
+}
+
+type EmptyApiKeyError struct{}
+
+func (e EmptyApiKeyError) Error() string {
+	return "Api key passed is empty"
+}
+
+type PlanFileNonexistentError struct {
+	planFile string
+}
+
+func (p PlanFileNonexistentError) Error() string {
+	return fmt.Sprintf("Plan file %v doesn't exist!", p.planFile)
+}
+
+type InvalidArtifactTypeError struct {
+	url string
+}
+
+func (i InvalidArtifactTypeError) Error() string {
+	return fmt.Sprintf("url %v contains an invalid artifact type", i.url)
+}

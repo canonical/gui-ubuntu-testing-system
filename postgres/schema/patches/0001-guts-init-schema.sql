@@ -1,11 +1,27 @@
 -- create db
+
 CREATE DATABASE guts;
 
 \c guts;
 
+DROP TABLE IF EXISTS currtztable;
+
+SELECT current_setting('TIMEZONE') INTO currtztable;
+
+DO
+$do$
+BEGIN
+    IF (SELECT count(*) = 0 FROM currtztable WHERE current_setting='UTC') THEN
+        ALTER DATABASE guts SET timezone TO 'UTC';
+    END IF;
+END
+$do$;
+
+DROP TABLE IF EXISTS currtztable;
+
 -- create tables
 CREATE TABLE IF NOT EXISTS jobs (
-    uuid VARCHAR(36) PRIMARY KEY NOT NULL,
+    uuid VARCHAR(36) PRIMARY KEY NOT NULL,  -- noqa: RF04
     artifact_url VARCHAR(300),
     tests_repo VARCHAR(300) NOT NULL,
     tests_repo_branch VARCHAR(200) NOT NULL,
@@ -24,7 +40,7 @@ CREATE TABLE IF NOT EXISTS jobs (
 );
 
 CREATE TABLE IF NOT EXISTS tests (
-    uuid VARCHAR(36) NOT NULL,
+    uuid VARCHAR(36) NOT NULL,  -- noqa: RF04
     test_case VARCHAR(100),
     vnc_address VARCHAR(50),
     state VARCHAR(50),
@@ -38,12 +54,12 @@ CREATE TABLE IF NOT EXISTS tests (
 
 CREATE TABLE IF NOT EXISTS users (
     username VARCHAR(50),
-    key VARCHAR(200),  -- stored as sha256 sum
+    key VARCHAR(200),  -- stored as sha256 sum  -- noqa: RF04
     maximum_priority INTEGER NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS reporter (
-    uuid VARCHAR(36) NOT NULL,
+    uuid VARCHAR(36) NOT NULL,  -- noqa: RF04
     base_reporting_url VARCHAR(300),
     CONSTRAINT uuid_key FOREIGN KEY (uuid) REFERENCES jobs (uuid)
 );  -- \n
