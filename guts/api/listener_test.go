@@ -1,9 +1,8 @@
-package main
+package api
 
 import (
 	"fmt"
 	"github.com/gin-gonic/gin"
-	"guts.ubuntu.com/v2/api"
 	"guts.ubuntu.com/v2/utils"
 	"net/http"
 	"net/http/httptest"
@@ -65,7 +64,7 @@ func TestJobEndpointInvalidUuid(t *testing.T) {
 
 func TestArtifactsEndpoint(t *testing.T) {
 	fmt.Println("Hello")
-	servingProcess := utils.ServeRelativeDirectory("/../../../postgres/test-data/test-files/")
+	servingProcess := utils.ServeRelativeDirectory("/../../postgres/test-data/test-files/")
 	defer utils.DeferredErrCheck(servingProcess.Kill)
 	fmt.Println("Are we getting through this")
 
@@ -113,8 +112,8 @@ func TestArtifactsEndpointInvalidUuid(t *testing.T) {
 	}
 }
 
-func CreateAcceptableJobRequest() api.JobRequest {
-	var req api.JobRequest
+func CreateAcceptableJobRequest() JobRequest {
+	var req JobRequest
 	myString := "https://launchpad.net/ubuntu/+archive/primary/+files/hello_2.10-5_amd64.deb"
 	req.ArtifactUrl = &myString
 	req.TestsRepo = "https://github.com/canonical/ubuntu-gui-testing.git"
