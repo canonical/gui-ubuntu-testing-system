@@ -1,0 +1,10 @@
+storage:
+  provider: "swift"
+  swift_user: "user"
+  swift_api_key: "api-key"
+  swift_auth_url: "auth-url"
+  swift_domain: "Default"
+  swift_tenant: "Default"
+database:
+  driver: "postgres"
+  connection_string: "host=localhost port=5432 user=guts_api password=guts_api dbname=guts sslmode=disable"

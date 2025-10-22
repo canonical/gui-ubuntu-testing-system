@@ -99,6 +99,10 @@ func (d DbDriver) SetTestStateTo(id int, state string) error {
 	return err
 }
 
+func (d DbDriver) NukeUuid(uuid string) error {
+  return d.Interface.RemoveUuidFromAllTables(uuid)
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 // section with interfaces and functionality for different engines
 
@@ -110,6 +114,7 @@ type DbOperationInterface interface {
 	InterfaceRunQueryRow(queryString string) (*sql.Row, error)
 	InterfaceRunRowUpdate(query string) error
 	UpdateUpdatedAt(id int) error
+  RemoveUuidFromAllTables(uuid string) error
 }
 
 type PgOperationInterface struct {
@@ -193,6 +198,39 @@ func (p PgOperationInterface) UpdateUpdatedAt(id int) error {
 	_, err = stmt.Exec(ts, id)
 	return err
 }
+
+func (p PgOperationInterface) DeleteUuidFromTable(uuid, table string) error {
+  removeQuery := fmt.Sprintf(`DELETE FROM $1 WHERE uuid='$2'`)
+  stmt, err := p.Db.Prepare(removeQuery)
+	if err != nil { // coverage-ignore
+		return err
+	}
+	defer utils.DeferredErrCheck(stmt.Close)
+	_, err = stmt.Exec(table, uuid)
+  return err
+}
+
+func (p PgOperationInterface) RemoveUuidFromAllTables(uuid string) error {
+  err := p.DeleteUuidFromTable(uuid, "tests")
+  if err != nil {
+    return err
+  }
+
+  err = p.DeleteUuidFromTable(uuid, "jobs")
+  if err != nil {
+    return err
+  }
+
+  err = p.DeleteUuidFromTable(uuid, "reporter")
+  if err != nil {
+    return err
+  }
+
+  return nil
+}
+
+/////////////////////////////////////////////////////////////////////////////////
+// Helper functions
 
 // just used for testing, so we don't test
 func SkipTestIfPostgresInactive(PgError error) bool { // coverage-ignore
