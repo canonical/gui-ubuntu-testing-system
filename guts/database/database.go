@@ -5,6 +5,7 @@ import (
 	"fmt"
 	_ "github.com/lib/pq"
 	"guts.ubuntu.com/v2/utils"
+	"log"
 	"os/exec"
 	"reflect"
 	"slices"
@@ -100,7 +101,7 @@ func (d DbDriver) SetTestStateTo(id int, state string) error {
 }
 
 func (d DbDriver) NukeUuid(uuid string) error {
-  return d.Interface.RemoveUuidFromAllTables(uuid)
+	return d.Interface.RemoveUuidFromAllTables(uuid)
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -114,7 +115,7 @@ type DbOperationInterface interface {
 	InterfaceRunQueryRow(queryString string) (*sql.Row, error)
 	InterfaceRunRowUpdate(query string) error
 	UpdateUpdatedAt(id int) error
-  RemoveUuidFromAllTables(uuid string) error
+	RemoveUuidFromAllTables(uuid string) error
 }
 
 type PgOperationInterface struct {
@@ -149,6 +150,7 @@ func (p PgOperationInterface) InterfaceQueryRow(table, queryField, queryValue st
 func (p PgOperationInterface) InterfaceQuery(table, queryField, queryValue string, fields []string) (*sql.Rows, error) { // coverage-ignore
 	var rows *sql.Rows
 	queryString := fmt.Sprintf("SELECT %v FROM %v WHERE %v=$1", strings.Join(fields, ", "), table, queryField)
+	log.Printf("running query %v with query parameter %v\n", queryString, queryValue)
 	stmt, err := p.Db.Prepare(queryString)
 	if err != nil { // coverage-ignore
 		return rows, err
@@ -158,7 +160,7 @@ func (p PgOperationInterface) InterfaceQuery(table, queryField, queryValue strin
 	if err != nil { // coverage-ignore
 		return rows, err
 	}
-	return rows, err
+	return rows, nil
 }
 
 func (p PgOperationInterface) InterfacePrepareQuery(queryString string) (*sql.Stmt, error) { // coverage-ignore
@@ -200,33 +202,34 @@ func (p PgOperationInterface) UpdateUpdatedAt(id int) error {
 }
 
 func (p PgOperationInterface) DeleteUuidFromTable(uuid, table string) error {
-  removeQuery := fmt.Sprintf(`DELETE FROM $1 WHERE uuid='$2'`)
-  stmt, err := p.Db.Prepare(removeQuery)
+	removeQuery := fmt.Sprintf(`DELETE FROM %v WHERE uuid='%v'`, table, uuid)
+	stmt, err := p.Db.Prepare(removeQuery)
 	if err != nil { // coverage-ignore
 		return err
 	}
 	defer utils.DeferredErrCheck(stmt.Close)
-	_, err = stmt.Exec(table, uuid)
-  return err
+	_, err = stmt.Exec()
+	return err
 }
 
 func (p PgOperationInterface) RemoveUuidFromAllTables(uuid string) error {
-  err := p.DeleteUuidFromTable(uuid, "tests")
-  if err != nil {
-    return err
-  }
+	// order must be preserved as uuid is a primary key in jobs
+	err := p.DeleteUuidFromTable(uuid, "reporter")
+	if err != nil { // coverage-ignore
+		return err
+	}
 
-  err = p.DeleteUuidFromTable(uuid, "jobs")
-  if err != nil {
-    return err
-  }
+	err = p.DeleteUuidFromTable(uuid, "tests")
+	if err != nil { // coverage-ignore
+		return err
+	}
 
-  err = p.DeleteUuidFromTable(uuid, "reporter")
-  if err != nil {
-    return err
-  }
+	err = p.DeleteUuidFromTable(uuid, "jobs")
+	if err != nil { // coverage-ignore
+		return err
+	}
 
-  return nil
+	return nil
 }
 
 /////////////////////////////////////////////////////////////////////////////////

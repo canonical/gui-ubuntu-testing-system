@@ -12,9 +12,8 @@ type GutsSchedulerConfig struct {
 		Driver           string `yaml:"driver"`
 		ConnectionString string `yaml:"connection_string"`
 	}
-  TestInactiveResetSeconds int `yaml:"test_inactive_reset_seconds"`
-  TestInactiveResetTime string `yaml:"test_inactive_reset_time"`  // like '2 minutes'
-  ArtifactRetentionDays int `yaml:"artifact_retention_days"`
+	TestInactiveResetTime string `yaml:"test_inactive_reset_time"` // like '2 minutes'
+	ArtifactRetentionDays int    `yaml:"artifact_retention_days"`
 }
 
 func ParseConfig(cfgPath string) (GutsSchedulerConfig, error) {
@@ -30,4 +29,3 @@ func ParseConfig(cfgPath string) (GutsSchedulerConfig, error) {
 	err = yaml.Unmarshal(yamlFile, &SchedulerConfig)
 	return SchedulerConfig, err
 }
-

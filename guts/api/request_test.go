@@ -8,25 +8,11 @@ import (
 	"testing"
 )
 
-func makeDummyJobReq() JobRequest {
-	var expectedJobReq JobRequest
-	url := "myurl"
-	expectedJobReq.ArtifactUrl = &url
-	expectedJobReq.TestsRepo = "myrepo"
-	expectedJobReq.TestsRepoBranch = "main"
-	expectedJobReq.TestsPlans = []string{"plan1", "plan2"}
-	expectedJobReq.TestBed = "mytestbedurl"
-	expectedJobReq.Debug = false
-	expectedJobReq.Priority = 1
-	expectedJobReq.Reporter = ""
-	return expectedJobReq
-}
-
 func TestParseJobFromJsonSuccess(t *testing.T) {
 	inputJson := `{"artifact_url": "myurl", "tests_repo": "myrepo", "tests_repo_branch": "main", "tests_plans": ["plan1", "plan2"], "testbed": "mytestbedurl", "debug": false, "priority": 1, "reporter": ""}`
 	actualJobReq, err := ParseJobFromJson([]byte(inputJson))
 	utils.CheckError(err)
-	expectedJobReq := makeDummyJobReq()
+	expectedJobReq := MakeDummyJobReq()
 	if !reflect.DeepEqual(actualJobReq, expectedJobReq) {
 		t.Errorf("Parsed job not same as expected!\nExpected: %v\nActual: %v", expectedJobReq, actualJobReq)
 	}
@@ -87,7 +73,7 @@ func TestAuthorizeUserAndAssignPriorityReqUnderMaxPrio(t *testing.T) {
 	andersson123KeyPreSha := "4c126f75-c7d8-4a89-9370-f065e7ff4208"
 	andersson123Key := utils.Sha256sumOfString(andersson123KeyPreSha)
 
-	dummyJobReq := makeDummyJobReq()
+	dummyJobReq := MakeDummyJobReq()
 
 	_, alteredJobReq, err := AuthorizeUserAndAssignPriority(andersson123Key, dummyJobReq, Driver)
 	utils.CheckError(err)
@@ -107,7 +93,7 @@ func TestAuthorizeUserAndAssignPriorityBadKey(t *testing.T) {
 	keyPreSha := "bender-bending-rodriguez"
 	key := utils.Sha256sumOfString(keyPreSha)
 
-	dummyJobReq := makeDummyJobReq()
+	dummyJobReq := MakeDummyJobReq()
 
 	_, _, err = AuthorizeUserAndAssignPriority(key, dummyJobReq, Driver)
 	if err == nil {
@@ -130,7 +116,7 @@ func TestAuthorizeUserAndAssignPriorityReqMaxPrio(t *testing.T) {
 	andersson123KeyPreSha := "4c126f75-c7d8-4a89-9370-f065e7ff4208"
 	andersson123Key := utils.Sha256sumOfString(andersson123KeyPreSha)
 
-	dummyJobReq := makeDummyJobReq()
+	dummyJobReq := MakeDummyJobReq()
 	dummyJobReq.Priority = 10
 
 	_, alteredJobReq, err := AuthorizeUserAndAssignPriority(andersson123Key, dummyJobReq, Driver)
@@ -151,7 +137,7 @@ func TestAuthorizeUserAndAssignPriorityReqOverMaxPrio(t *testing.T) {
 	andersson123KeyPreSha := "4c126f75-c7d8-4a89-9370-f065e7ff4208"
 	andersson123Key := utils.Sha256sumOfString(andersson123KeyPreSha)
 
-	dummyJobReq := makeDummyJobReq()
+	dummyJobReq := MakeDummyJobReq()
 	dummyJobReq.Priority = 11
 
 	timData, alteredJobReq, err := AuthorizeUserAndAssignPriority(andersson123Key, dummyJobReq, Driver)
@@ -329,15 +315,21 @@ func TestWriteJobEntryToDbSucceeds(t *testing.T) {
 	timData, err := GetAuthDataForKey(andersson123Key, Driver)
 	utils.CheckError(err)
 
-	dummyJobReq := makeDummyJobReq()
+	dummyJobReq := MakeDummyJobReq()
 	jobEntry := CreateJobEntry(dummyJobReq, timData)
 
 	err = WriteJobEntryToDb(jobEntry, Driver)
 	utils.CheckError(err)
+
+	Driver, err = database.TestDbDriver("guts_scheduler", "guts_scheduler")
+	utils.CheckError(err)
+
+	err = Driver.NukeUuid(jobEntry.Uuid)
+	utils.CheckError(err)
 }
 
 func TestJobRequestToJson(t *testing.T) {
-	jobReq := makeDummyJobReq()
+	jobReq := MakeDummyJobReq()
 	expectedJson := `{"artifact_url":"myurl","tests_repo":"myrepo","tests_repo_branch":"main","tests_plans":["plan1","plan2"],"testbed":"mytestbedurl","debug":false,"priority":1,"reporter":""}`
 	jobJson := jobReq.ToJson()
 	if expectedJson != jobJson {

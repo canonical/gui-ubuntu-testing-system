@@ -6,6 +6,7 @@ import (
 	"compress/gzip"
 	"crypto/md5"
 	"crypto/sha256"
+	"gopkg.in/yaml.v3"
 	"encoding/hex"
 	"fmt"
 	"io"
@@ -203,7 +204,6 @@ func ServeRelativeDirectory(relativeDir string) *os.Process { // coverage-ignore
 }
 
 // this function is just used for testing, so we don't test it
-// this process doesn't get killed - ffs
 func ServeDirectory(testFilesDir string) *os.Process { // coverage-ignore
 	port := "9999"
 
@@ -213,18 +213,17 @@ func ServeDirectory(testFilesDir string) *os.Process { // coverage-ignore
 	err := serveCmd.Start()
 	CheckError(err)
 
-	for i := 0; i < 60; i++ {
+	for i := 0; i < 300; i++ {
 		// I think this long timeout was leftover from debugging.
-		// timeout := time.Second * 5
 		timeout := time.Second
 		conn, err := net.DialTimeout("tcp", net.JoinHostPort("localhost", port), timeout)
 		if err != nil {
-			time.Sleep(timeout)
+			time.Sleep(time.Millisecond * 250)
 		} else {
 			if conn != nil {
 				err := conn.Close()
 				CheckError(err)
-				time.Sleep(time.Second)
+				time.Sleep(time.Millisecond * 250)
 				return serveCmd.Process
 			}
 		}

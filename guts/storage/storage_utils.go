@@ -8,6 +8,7 @@ import (
 	"github.com/ncw/swift/v2"
 	"guts.ubuntu.com/v2/utils"
 	"os"
+  "log"
 	"strings"
 )
 
@@ -139,6 +140,7 @@ func (l LocalBackend) Upload(namespace, remotePath string, data []byte) (string,
 func (l LocalBackend) RemoveObjectsOlderThan(duration time.Duration) ([]string, error) {
   var deletedObjects []string
   now := time.Now()
+  log.Printf("removing objects older than %v\n", duration)
   // list directories at l.Cfg.ObjectPath - this is the equivalent of containers in swift
   entries, err := os.ReadDir(l.Cfg.ObjectPath)
   if err != nil {
@@ -146,20 +148,22 @@ func (l LocalBackend) RemoveObjectsOlderThan(duration time.Duration) ([]string, 
   }
   // for each directory, os.Stat -> FileInfo -> info.ModTime()
   for _, entry := range entries {
-    fi, err := os.Stat(entry)
+    fullPath := fmt.Sprintf("%v/%v", l.Cfg.ObjectPath, entry.Name())
+    fi, err := os.Stat(fullPath)
     if err != nil {
       return deletedObjects, err
     }
     // ModTime returns time.Time, so can directly compare them with no parsing.
     modTime := fi.ModTime()
-    timeSinceLastMod := now - modTime
+    timeSinceLastMod := now.Sub(modTime)
     if timeSinceLastMod > duration {
+      log.Printf("%v is older than %v, removing...", entry.Name(), duration)
       // if older than duration, nuke the container/directory
-      err = os.RemoveAll(entry)
+      err = os.RemoveAll(fullPath)
       if err != nil {
         return deletedObjects, err
       }
-      deletedObjects = append(deletedObjects, entry)
+      deletedObjects = append(deletedObjects, entry.Name())
     }
   }
   return deletedObjects, nil
@@ -281,7 +285,7 @@ func (s SwiftBackend) Upload(namespace, remotePath string, data []byte) (string,
 	return fullStorageUrl, nil
 }
 
-func (s SwiftBackend) RemoveObjectsOlderThan(duration time.Duration) error {
+func (s SwiftBackend) RemoveObjectsOlderThan(duration time.Duration) ([]string, error) {
   var deletedObjects []string
   // ensure swift connection is initialised
 	ctxt := context.TODO()
@@ -317,7 +321,7 @@ func (s SwiftBackend) RemoveObjectsOlderThan(duration time.Duration) error {
     if err != nil {
       return deletedObjects, err
     }
-    if (now - timeObj) > duration {
+    if now.Sub(timeObj) > duration {
       ctxt = context.TODO()
       // remove the container
       err = s.Con.ContainerDelete(ctxt, cont.Name)

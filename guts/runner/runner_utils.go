@@ -3,7 +3,6 @@ package runner
 import (
 	"database/sql"
 	"fmt"
-	"gopkg.in/yaml.v3"
 	"guts.ubuntu.com/v2/database"
 	"guts.ubuntu.com/v2/storage"
 	"guts.ubuntu.com/v2/utils"
@@ -61,10 +60,10 @@ func CloneTestsData(rowId int, Driver database.DbDriver) (TestGitData, error) {
 		return testData, err
 	}
 	// clone the repository to a directory
-  err = utils.GitCloneToDir(testData.TestsRepo, testData.TestsRepoBranch, cloneDirName)
-  if err != nil {
-    return testData, err
-  }
+	err = utils.GitCloneToDir(testData.TestsRepo, testData.TestsRepoBranch, cloneDirName)
+	if err != nil {
+		return testData, err
+	}
 
 	// get the commit hash
 	gitHash, err := exec.Command(
@@ -152,9 +151,10 @@ func GetYarfCommandLine(TestData TestGitData, rowId int, artifactsDir string, Dr
 	fullPlanPath := fmt.Sprintf("%v/%v", TestData.RepoDir, plan)
 
 	testPlan, err := utils.ParsePlan(fullPlanPath)
-  if err != nil {
-    return cmdLine, err
-  }
+	// ParsePlan failures are tested in utils tests
+	if err != nil { // coverage-ignore
+		return cmdLine, err
+	}
 
 	entrypoint := ""
 	for _, entry := range testPlan.Tests {

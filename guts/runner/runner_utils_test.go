@@ -2,7 +2,6 @@ package runner
 
 import (
 	"fmt"
-	"gopkg.in/yaml.v3"
 	"guts.ubuntu.com/v2/database"
 	"guts.ubuntu.com/v2/utils"
 	"os"
