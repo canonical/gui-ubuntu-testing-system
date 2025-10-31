@@ -1,0 +1,10 @@
+storage:
+  provider: "local"
+  object_path: "/srv/data/"
+  object_port: 9999
+  object_host: "http://localhost"
+database:
+  driver: "postgres"
+  connection_string: "host=localhost port=5432 user=guts_api password=guts_api dbname=guts sslmode=disable"
+test_inactive_reset_time: '2 minutes'
+artifact_retention_days: 180

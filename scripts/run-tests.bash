@@ -18,6 +18,12 @@ trap cleanup EXIT
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 BASE_DIR="${SCRIPT_DIR}/../"
 GUTS_DIR="${BASE_DIR}guts"
+DB_BOOTSTRAP_SCRIPT="${BASE_DIR}/postgres/scripts/bootstrap-db.sh"
+
+echo "bootstrapping DB!"
+$DB_BOOTSTRAP_SCRIPT local yes
+
+clear
 
 git lfs pull
 

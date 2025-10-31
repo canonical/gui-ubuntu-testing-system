@@ -166,3 +166,16 @@ func TestUpdateUpdatedAt(t *testing.T) {
 	err = UpdateUpdatedAt(rowId, Driver)
 	utils.CheckError(err)
 }
+
+func TestNukeUuid(t *testing.T) {
+	Driver, err := TestDbDriver("guts_scheduler", "guts_scheduler")
+	if SkipTestIfPostgresInactive(err) {
+		t.Skip("Skipping test as postgresql service is not up")
+	} else {
+		utils.CheckError(err)
+	}
+
+	uuid := "730b6b44-cb5a-4b65-9e4a-067a1f48aee0"
+	err = Driver.NukeUuid(uuid)
+	utils.CheckError(err)
+}
