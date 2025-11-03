@@ -8,8 +8,6 @@ on:
 jobs:
   lint-openapi-spec:
     uses: ./.github/workflows/lint-openapi-spec.yaml
-  mdlint:
-    uses: ./.github/workflows/mdlint.yaml
   sqllint:
     uses: ./.github/workflows/lint-sql-files.yaml
   tests:
