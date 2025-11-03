@@ -3,7 +3,6 @@ package runner
 import (
 	"database/sql"
 	"fmt"
-	"gopkg.in/yaml.v3"
 	"guts.ubuntu.com/v2/database"
 	"guts.ubuntu.com/v2/storage"
 	"guts.ubuntu.com/v2/utils"
@@ -19,41 +18,6 @@ type TestGitData struct {
 	TestsRepo       string
 	TestsRepoBranch string
 	RepoDir         string
-}
-
-type TestCaseData struct {
-	EntryPoint   string
-	Requirements struct {
-		Tpm bool
-	}
-}
-
-type TestCase struct {
-	Name string
-	Data TestCaseData
-}
-
-type TestCases []TestCase
-
-type TestPlan struct {
-	Tests TestCases
-}
-
-func (p *TestCases) UnmarshalYAML(value *yaml.Node) error { // coverage-ignore
-	if value.Kind != yaml.MappingNode {
-		return fmt.Errorf("`tests` must contain YAML mapping, has %v", value.Kind)
-	}
-	*p = make([]TestCase, len(value.Content)/2)
-	for i := 0; i < len(value.Content); i += 2 {
-		var res = &(*p)[i/2]
-		if err := value.Content[i].Decode(&res.Name); err != nil {
-			return err
-		}
-		if err := value.Content[i+1].Decode(&res.Data); err != nil {
-			return err
-		}
-	}
-	return nil
 }
 
 func GetPartialGitData(rowId int, Driver database.DbDriver) (TestGitData, error) {
@@ -96,20 +60,9 @@ func CloneTestsData(rowId int, Driver database.DbDriver) (TestGitData, error) {
 		return testData, err
 	}
 	// clone the repository to a directory
-	cloneCmd := exec.Command(
-		"git",
-		"clone",
-		"--branch",
-		testData.TestsRepoBranch,
-		testData.TestsRepo,
-		cloneDirName,
-	)
-	if err := cloneCmd.Run(); err != nil {
-		err = os.RemoveAll(cloneDirName)
-		if err != nil { // coverage-ignore
-			return testData, err
-		}
-		return testData, utils.GenericGitError{Command: cloneCmd.Args}
+	err = utils.GitCloneToDir(testData.TestsRepo, testData.TestsRepoBranch, cloneDirName)
+	if err != nil {
+		return testData, err
 	}
 
 	// get the commit hash
@@ -187,20 +140,6 @@ func GetPlanAndTestCase(rowId int, Driver database.DbDriver) (string, string, er
 	return plan, testCase, nil
 }
 
-func ParsePlan(planPath string) (TestPlan, error) {
-	var testPlan TestPlan
-	dat, err := os.ReadFile(planPath)
-	if err != nil { // coverage-ignore
-		return testPlan, err
-	}
-
-	err = yaml.Unmarshal(dat, &testPlan)
-	if err != nil {
-		return testPlan, err
-	}
-	return testPlan, nil
-}
-
 func GetYarfCommandLine(TestData TestGitData, rowId int, artifactsDir string, Driver database.DbDriver) ([]string, error) {
 	var cmdLine []string
 	plan, testCase, err := GetPlanAndTestCase(rowId, Driver)
@@ -211,7 +150,11 @@ func GetYarfCommandLine(TestData TestGitData, rowId int, artifactsDir string, Dr
 
 	fullPlanPath := fmt.Sprintf("%v/%v", TestData.RepoDir, plan)
 
-	testPlan, err := ParsePlan(fullPlanPath)
+	testPlan, err := utils.ParsePlan(fullPlanPath)
+	// ParsePlan failures are tested in utils tests
+	if err != nil { // coverage-ignore
+		return cmdLine, err
+	}
 
 	entrypoint := ""
 	for _, entry := range testPlan.Tests {

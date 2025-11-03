@@ -13,7 +13,7 @@ COPY jobs (
     requester,
     debug,
     priority
-) FROM '/var/lib/postgresql/data/jobs.csv' DELIMITER ',' CSV HEADER;
+) FROM '/var/lib/postgresql/data/test-data/jobs.csv' DELIMITER ',' CSV HEADER;
 
 COPY tests (
     uuid,
@@ -24,12 +24,12 @@ COPY tests (
     updated_at,
     plan,
     commit_hash
-) FROM '/var/lib/postgresql/data/tests.csv' DELIMITER ',' CSV HEADER;
+) FROM '/var/lib/postgresql/data/test-data/tests.csv' DELIMITER ',' CSV HEADER;
 
 COPY users (
     username, key, maximum_priority
-) FROM '/var/lib/postgresql/data/users.csv' DELIMITER ',' CSV HEADER;
+) FROM '/var/lib/postgresql/data/test-data/users.csv' DELIMITER ',' CSV HEADER;
 
 COPY reporter (
     uuid, base_reporting_url
-) FROM '/var/lib/postgresql/data/reporters.csv' DELIMITER ',' CSV HEADER;
+) FROM '/var/lib/postgresql/data/test-data/reporters.csv' DELIMITER ',' CSV HEADER; -- noqa:disable=layout.long_lines

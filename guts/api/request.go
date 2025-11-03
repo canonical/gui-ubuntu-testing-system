@@ -250,3 +250,18 @@ func WriteJobEntryToDb(job JobEntry, driver database.DbDriver) error {
 	err := InsertJobsRow(job, driver)
 	return err
 }
+
+// We don't test this function because it's only used for unit tests
+func MakeDummyJobReq() JobRequest { // coverage-ignore
+	var expectedJobReq JobRequest
+	url := "myurl"
+	expectedJobReq.ArtifactUrl = &url
+	expectedJobReq.TestsRepo = "myrepo"
+	expectedJobReq.TestsRepoBranch = "main"
+	expectedJobReq.TestsPlans = []string{"plan1", "plan2"}
+	expectedJobReq.TestBed = "mytestbedurl"
+	expectedJobReq.Debug = false
+	expectedJobReq.Priority = 1
+	expectedJobReq.Reporter = ""
+	return expectedJobReq
+}

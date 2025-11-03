@@ -1,8 +1,9 @@
 package api
 
 import (
-	"fmt"
+	"encoding/json"
 	"github.com/gin-gonic/gin"
+	"guts.ubuntu.com/v2/database"
 	"guts.ubuntu.com/v2/utils"
 	"net/http"
 	"net/http/httptest"
@@ -10,6 +11,11 @@ import (
 	"strings"
 	"testing"
 )
+
+type JobReqResponse struct {
+	Uuid      string `json:"uuid"`
+	StatusUrl string `json:"status_url"`
+}
 
 func SetUpRouter() *gin.Engine {
 	router := gin.Default()
@@ -19,7 +25,7 @@ func SetUpRouter() *gin.Engine {
 func TestJobEndpoint(t *testing.T) {
 	r := SetUpRouter()
 	r.GET("/job/:uuid", JobEndpoint)
-	ExpectedResponse := `"{\"Job\":{\"uuid\":\"4ce9189f-561a-4886-aeef-1836f28b073b\",\"artifact_url\":null,\"tests_repo\":\"https://github.com/canonical/ubuntu-gui-testing.git\",\"tests_repo_branch\":\"main\",\"tests_plans\":[\"tests/firefox-example/plans/extended.yaml\",\"tests/firefox-example/plans/regular.yaml\"],\"image_url\":\"https://cdimage.ubuntu.com/daily-live/current/questing-desktop-amd64.iso\",\"reporter\":\"test_observer\",\"status\":\"running\",\"submitted_at\":\"2025-07-23T14:17:14.632177Z\",\"requester\":\"andersson123\",\"debug\":false,\"priority\":8},\"results\":{\"Firefox-Example-Basic\":\"requested\",\"Firefox-Example-New-Tab\":\"spawning\"}}"`
+	ExpectedResponse := `"{\"Job\":{\"uuid\":\"4ce9189f-561a-4886-aeef-1836f28b073b\",\"artifact_url\":null,\"tests_repo\":\"https://github.com/canonical/ubuntu-gui-testing.git\",\"tests_repo_branch\":\"main\",\"tests_plans\":[\"tests/firefox-example/plans/extended.yaml\",\"tests/firefox-example/plans/regular.yaml\"],\"image_url\":\"https://cdimage.ubuntu.com/daily-live/current/questing-desktop-amd64.iso\",\"reporter\":\"test_observer\",\"status\":\"running\",\"submitted_at\":\"2025-07-23T14:17:14.632177Z\",\"requester\":\"andersson123\",\"debug\":false,\"priority\":11},\"results\":{\"Firefox-Example-Basic\":\"requested\",\"Firefox-Example-New-Tab\":\"spawning\"}}"`
 	Uuid := "4ce9189f-561a-4886-aeef-1836f28b073b"
 	reqFound, _ := http.NewRequest("GET", "/job/"+Uuid, nil)
 	w := httptest.NewRecorder()
@@ -63,10 +69,8 @@ func TestJobEndpointInvalidUuid(t *testing.T) {
 }
 
 func TestArtifactsEndpoint(t *testing.T) {
-	fmt.Println("Hello")
 	servingProcess := utils.ServeRelativeDirectory("/../../postgres/test-data/test-files/")
 	defer utils.DeferredErrCheck(servingProcess.Kill)
-	fmt.Println("Are we getting through this")
 
 	r := SetUpRouter()
 	r.GET("/artifacts/:uuid/results.tar.gz", ArtifactsEndpoint)
@@ -75,13 +79,10 @@ func TestArtifactsEndpoint(t *testing.T) {
 	w := httptest.NewRecorder()
 	r.ServeHTTP(w, reqFound)
 
-	fmt.Println("Request served")
-
 	expectedCode := 200
 	if !reflect.DeepEqual(w.Code, expectedCode) {
 		t.Errorf("Unexpected exit code!\nExpected: %v\nActual: %v", expectedCode, w.Code)
 	}
-	fmt.Println("Are we getting here?")
 }
 
 func TestArtifactsEndpointUnknownUuid(t *testing.T) {
@@ -113,6 +114,7 @@ func TestArtifactsEndpointInvalidUuid(t *testing.T) {
 }
 
 func CreateAcceptableJobRequest() JobRequest {
+	// The culprit.
 	var req JobRequest
 	myString := "https://launchpad.net/ubuntu/+archive/primary/+files/hello_2.10-5_amd64.deb"
 	req.ArtifactUrl = &myString
@@ -136,6 +138,20 @@ func TestRequestEndpointSuccess(t *testing.T) {
 	reqFound.Header.Add("X-Api-Key", "4c126f75-c7d8-4a89-9370-f065e7ff4208")
 	w := httptest.NewRecorder()
 	r.ServeHTTP(w, reqFound)
+
+	var s string
+	err := json.Unmarshal(w.Body.Bytes(), &s)
+	utils.CheckError(err)
+
+	var thisResponse JobReqResponse
+	err = json.Unmarshal([]byte(s), &thisResponse)
+	utils.CheckError(err)
+
+	Driver, err := database.TestDbDriver("guts_scheduler", "guts_scheduler")
+	utils.CheckError(err)
+
+	err = Driver.NukeUuid(thisResponse.Uuid)
+	utils.CheckError(err)
 
 	expectedCode := 200
 	if w.Code != expectedCode {

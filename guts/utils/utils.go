@@ -8,6 +8,7 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
+	"gopkg.in/yaml.v3"
 	"io"
 	// "log"
 	"net"
@@ -20,6 +21,24 @@ import (
 	"strings"
 	"time"
 )
+
+type TestCaseData struct {
+	EntryPoint   string
+	Requirements struct {
+		Tpm bool
+	}
+}
+
+type TestCase struct {
+	Name string
+	Data TestCaseData
+}
+
+type TestCases []TestCase
+
+type TestPlan struct {
+	Tests TestCases
+}
 
 type GenericGitError struct {
 	Command []string
@@ -185,7 +204,6 @@ func ServeRelativeDirectory(relativeDir string) *os.Process { // coverage-ignore
 }
 
 // this function is just used for testing, so we don't test it
-// this process doesn't get killed - ffs
 func ServeDirectory(testFilesDir string) *os.Process { // coverage-ignore
 	port := "9999"
 
@@ -195,18 +213,17 @@ func ServeDirectory(testFilesDir string) *os.Process { // coverage-ignore
 	err := serveCmd.Start()
 	CheckError(err)
 
-	for i := 0; i < 60; i++ {
+	for i := 0; i < 300; i++ {
 		// I think this long timeout was leftover from debugging.
-		// timeout := time.Second * 5
 		timeout := time.Second
 		conn, err := net.DialTimeout("tcp", net.JoinHostPort("localhost", port), timeout)
 		if err != nil {
-			time.Sleep(timeout)
+			time.Sleep(time.Millisecond * 250)
 		} else {
 			if conn != nil {
 				err := conn.Close()
 				CheckError(err)
-				time.Sleep(time.Second)
+				time.Sleep(time.Millisecond * 250)
 				return serveCmd.Process
 			}
 		}
@@ -335,4 +352,57 @@ func StartProcess(processArgs []string, envVars *[]string) (*exec.Cmd, error) {
 	}
 	err := cmd.Start()
 	return cmd, err
+}
+
+func GitCloneToDir(repository, branch, directory string) error {
+	// leave directory as empty to just clone with repo name to current directory
+	cloneCmd := exec.Command(
+		"git",
+		"clone",
+		"--branch",
+		branch,
+		repository,
+		directory,
+	)
+	if err := cloneCmd.Run(); err != nil { // coverage-ignore
+		if directory != "" {
+			err = os.RemoveAll(directory)
+			if err != nil { // coverage-ignore
+				return err
+			}
+		}
+		return GenericGitError{Command: cloneCmd.Args}
+	}
+	return nil
+}
+
+func (p *TestCases) UnmarshalYAML(value *yaml.Node) error { // coverage-ignore
+	if value.Kind != yaml.MappingNode {
+		return fmt.Errorf("`tests` must contain YAML mapping, has %v", value.Kind)
+	}
+	*p = make([]TestCase, len(value.Content)/2)
+	for i := 0; i < len(value.Content); i += 2 {
+		var res = &(*p)[i/2]
+		if err := value.Content[i].Decode(&res.Name); err != nil {
+			return err
+		}
+		if err := value.Content[i+1].Decode(&res.Data); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func ParsePlan(planPath string) (TestPlan, error) {
+	var testPlan TestPlan
+	dat, err := os.ReadFile(planPath)
+	if err != nil { // coverage-ignore
+		return testPlan, err
+	}
+
+	err = yaml.Unmarshal(dat, &testPlan)
+	if err != nil {
+		return testPlan, err
+	}
+	return testPlan, nil
 }

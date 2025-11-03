@@ -6,8 +6,10 @@ import (
 	"fmt"
 	"github.com/ncw/swift/v2"
 	"guts.ubuntu.com/v2/utils"
+	"log"
 	"os"
 	"strings"
+	"time"
 )
 
 func GetStorageBackend(strgCfg map[string]string) (StorageBackend, error) {
@@ -43,6 +45,7 @@ func GetStorageBackend(strgCfg map[string]string) (StorageBackend, error) {
 type StorageBackend interface {
 	Connect(strgCfg *map[string]string) (StorageBackend, error)
 	Upload(namespace, remotePath string, data []byte) (string, error)
+	RemoveObjectsOlderThan(duration time.Duration) ([]string, error)
 }
 
 type LocalBackend struct {
@@ -68,7 +71,6 @@ func (l LocalBackendCfg) AssertConfigured() error {
 	return nil
 }
 
-// func (l LocalBackend) Connect(strgCfg *map[string]string) error {
 func (l LocalBackend) Connect(strgCfg *map[string]string) (StorageBackend, error) {
 	if strgCfg != nil {
 		jsonBody, err := json.Marshal(*strgCfg)
@@ -133,6 +135,38 @@ func (l LocalBackend) Upload(namespace, remotePath string, data []byte) (string,
 	fullObjectPath := fmt.Sprintf("%v:%v/%v", l.Cfg.ObjectHost, l.Cfg.ObjectPort, fmt.Sprintf("%v/%v", namespace, remotePath))
 
 	return fullObjectPath, nil
+}
+
+func (l LocalBackend) RemoveObjectsOlderThan(duration time.Duration) ([]string, error) {
+	var deletedObjects []string
+	now := time.Now()
+	log.Printf("removing objects older than %v\n", duration)
+	// list directories at l.Cfg.ObjectPath - this is the equivalent of containers in swift
+	entries, err := os.ReadDir(l.Cfg.ObjectPath)
+	if err != nil { // coverage-ignore
+		return deletedObjects, err
+	}
+	// for each directory, os.Stat -> FileInfo -> info.ModTime()
+	for _, entry := range entries {
+		fullPath := fmt.Sprintf("%v/%v", l.Cfg.ObjectPath, entry.Name())
+		fi, err := os.Stat(fullPath)
+		if err != nil { // coverage-ignore
+			return deletedObjects, err
+		}
+		// ModTime returns time.Time, so can directly compare them with no parsing.
+		modTime := fi.ModTime()
+		timeSinceLastMod := now.Sub(modTime)
+		if timeSinceLastMod > duration {
+			log.Printf("%v is older than %v, removing...", entry.Name(), duration)
+			// if older than duration, nuke the container/directory
+			err = os.RemoveAll(fullPath)
+			if err != nil { // coverage-ignore
+				return deletedObjects, err
+			}
+			deletedObjects = append(deletedObjects, entry.Name())
+		}
+	}
+	return deletedObjects, nil
 }
 
 type SwiftBackend struct {
@@ -206,7 +240,7 @@ func (s SwiftBackend) Connect(strgCfg *map[string]string) (StorageBackend, error
 
 // Since this function basically only uses swift internals, and swift is pretty
 // intricate to deploy both locally and in CI, we'll avoid unit testing this func
-// for the time being. In the future this may change.
+// for the time being. In the future this should change.
 func (s SwiftBackend) Upload(namespace, remotePath string, data []byte) (string, error) { // coverage-ignore
 	ctxt := context.TODO()
 	swiftBknd, err := s.Connect(nil)
@@ -249,4 +283,54 @@ func (s SwiftBackend) Upload(namespace, remotePath string, data []byte) (string,
 	fullStorageUrl := fmt.Sprintf("%v/%v/%v", baseSwiftUrl, namespace, remotePath)
 
 	return fullStorageUrl, nil
+}
+
+// TODO: Not testing for now since we have no swift for testing just yet.
+func (s SwiftBackend) RemoveObjectsOlderThan(duration time.Duration) ([]string, error) { // coverage-ignore
+	var deletedObjects []string
+	// ensure swift connection is initialised
+	ctxt := context.TODO()
+	swiftBknd, err := s.Connect(nil)
+	if err != nil {
+		return deletedObjects, err
+	}
+	s, ok := swiftBknd.(SwiftBackend)
+	if !ok {
+		return deletedObjects, fmt.Errorf("couldn't connect to swift backend")
+	}
+
+	now := time.Now()
+
+	// get complete list of containers
+	ctxt = context.TODO()
+	containers, err := s.Con.ContainersAll(ctxt, nil)
+	if err != nil {
+		return deletedObjects, err
+	}
+	// get container info
+	for _, cont := range containers {
+		ctxt = context.TODO()
+		_, hdrs, err := s.Con.Container(ctxt, cont.Name)
+		if err != nil {
+			return deletedObjects, err
+		}
+		// Time format is:
+		// Tue, 08 Apr 2025 11:09:15 GMT
+		// Which is RFC1123
+		lastMod := hdrs["Last-Modified"] // I've also seen this as last-modified, annoyingly
+		timeObj, err := time.Parse(time.RFC1123, lastMod)
+		if err != nil {
+			return deletedObjects, err
+		}
+		if now.Sub(timeObj) > duration {
+			ctxt = context.TODO()
+			// remove the container
+			err = s.Con.ContainerDelete(ctxt, cont.Name)
+			if err != nil {
+				return deletedObjects, err
+			}
+			deletedObjects = append(deletedObjects, cont.Name)
+		}
+	}
+	return deletedObjects, nil
 }
