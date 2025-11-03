@@ -20,3 +20,6 @@ guts/runner/cover.out
 guts/runner/coverage.out
 guts/storage/cover.out
 guts/storage/coverage.out
+guts/scheduler/cover.out
+guts/scheduler/coverage.out
+guts/cmd/scheduler/cover.out
