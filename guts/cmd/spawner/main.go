@@ -20,6 +20,7 @@ func main() { // coverage-ignore
 	for {
 		// perform the regular loop
 		err = spawner.SpawnerLoop(Driver, SpawnerCfg)
+		utils.CheckError(err)
 		// wait somewhere between 30 and 90 seconds before checking for new jobs
 		pollSleepDuration := time.Second * time.Duration(rand.IntN(60)+30)
 		time.Sleep(pollSleepDuration)

@@ -58,7 +58,7 @@ func TestGetCompleteResultsForUuidSuccess(t *testing.T) {
 	TestJob.SubmittedAt = parsedTime
 	TestJob.Requester = "andersson123"
 	TestJob.Debug = false
-	TestJob.Priority = 8
+	TestJob.Priority = 11
 	expectedJob.Job = TestJob
 	expectedJob.Results = make(map[string]string)
 	// what?
@@ -95,7 +95,7 @@ func TestFindJobByUuid(t *testing.T) {
 	utils.CheckError(err)
 	TestJob.Requester = "andersson123"
 	TestJob.Debug = false
-	TestJob.Priority = 8
+	TestJob.Priority = 11
 	if !reflect.DeepEqual(job, TestJob) {
 		t.Errorf("Expected job not the same as actual:\n%v\n%v", TestJob, job)
 	}

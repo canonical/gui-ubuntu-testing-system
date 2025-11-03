@@ -34,8 +34,9 @@ GRANT SELECT ON jobs TO guts_spawner;
 ALTER USER guts_spawner WITH LOGIN;
 
 -- scheduler permissions
-GRANT SELECT, UPDATE ON jobs TO guts_scheduler;
-GRANT SELECT, INSERT, UPDATE ON tests TO guts_scheduler;
+GRANT SELECT, UPDATE, DELETE ON jobs TO guts_scheduler;
+GRANT SELECT, INSERT, UPDATE, DELETE ON tests TO guts_scheduler;
+GRANT SELECT, DELETE ON reporter TO guts_scheduler;
 ALTER USER guts_scheduler WITH LOGIN;
 
 -- runner permissions

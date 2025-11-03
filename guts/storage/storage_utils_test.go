@@ -5,6 +5,7 @@ import (
 	"guts.ubuntu.com/v2/utils"
 	"os"
 	"testing"
+	"time"
 )
 
 func TestGetStorageBackendLocalSuccess(t *testing.T) {
@@ -164,5 +165,40 @@ func TestGetStorageBackendSwiftFailures(t *testing.T) {
 	expectedErrString = "Can't find AuthVersion in AuthUrl - set explicitly"
 	if err.Error() != expectedErrString {
 		t.Errorf("GetStorageBackend for provider %v failed with unexpected error!\nExpected: %v\nActual: %v", thisStrgCfg["provider"], expectedErrString, err.Error())
+	}
+}
+
+func TestLocalDataRetentionPolicy(t *testing.T) {
+	storageCfg := make(map[string]string)
+	storageCfg["provider"] = "local"
+	storageCfg["object_path"] = "/srv/data/"
+	storageCfg["object_port"] = "9999"
+	storageCfg["object_host"] = "http://localhost"
+
+	err := os.RemoveAll(storageCfg["object_path"])
+	utils.CheckError(err)
+
+	// create backend
+	backend, err := GetStorageBackend(storageCfg)
+	utils.CheckError(err)
+
+	retentionDuration, err := time.ParseDuration("3s")
+	utils.CheckError(err)
+
+	testUuid := "a0166248-3f7c-434a-b6c8-b063cd733b03"
+
+	// set up the test directory
+	objectDir := fmt.Sprintf("%v/%v/", storageCfg["object_path"], testUuid)
+	err = os.MkdirAll(objectDir, 0755)
+	utils.CheckError(err)
+	time.Sleep(time.Second * 4)
+
+	objects, err := backend.RemoveObjectsOlderThan(retentionDuration)
+	utils.CheckError(err)
+
+	expectedNumObjects := 1
+
+	if len(objects) != expectedNumObjects {
+		t.Errorf("unexpected amount of objects deleted! Expected %v, got %v", expectedNumObjects, len(objects))
 	}
 }

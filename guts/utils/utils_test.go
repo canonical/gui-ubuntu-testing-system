@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"fmt"
 	//"io"
+	"gopkg.in/yaml.v3"
 	"os"
 	"reflect"
 	"testing"
@@ -377,5 +378,80 @@ func TestStartProcessWithEnv(t *testing.T) {
 	CheckError(err)
 
 	err = process.Wait()
+	CheckError(err)
+}
+
+func TestParsePlan(t *testing.T) {
+	fullPlan := `---
+tests:
+  Firefox-Example-Basic:
+    entrypoint: tests/firefox-example
+  Firefox-Example-New-Tab:
+    entrypoint: tests/firefox-example`
+
+	dname, err := os.MkdirTemp("", "sampledir")
+	CheckError(err)
+
+	defer DeferredErrCheckStringArg(os.RemoveAll, dname)
+
+	testPlanFn := fmt.Sprintf("%v/testPlan.yaml", dname)
+	err = os.WriteFile(testPlanFn, []byte(fullPlan), 0644)
+	CheckError(err)
+
+	parsedPlan, err := ParsePlan(testPlanFn)
+	CheckError(err)
+
+	expectedCases := make(TestCases, 2)
+	expectedCases[0].Name = "Firefox-Example-Basic"
+	expectedCases[0].Data.EntryPoint = "tests/firefox-example"
+	expectedCases[0].Data.Requirements.Tpm = false
+	expectedCases[1].Name = "Firefox-Example-New-Tab"
+	expectedCases[1].Data.EntryPoint = "tests/firefox-example"
+	expectedCases[1].Data.Requirements.Tpm = false
+
+	if len(parsedPlan.Tests) != len(expectedCases) {
+		t.Errorf("unexpected number of plans parsed!\nexpected: %v\nactual: %v", len(expectedCases), len(parsedPlan.Tests))
+	}
+
+	for idx, entry := range parsedPlan.Tests {
+		if entry != expectedCases[idx] {
+			t.Errorf("unexpected test case!\nexpected: %v\nactual: %v", expectedCases[idx], entry)
+		}
+	}
+}
+
+func TestParsePlanBadFile(t *testing.T) {
+	fullPlan := `this-is-not-a-yaml-file`
+
+	dname, err := os.MkdirTemp("", "sampledir")
+	CheckError(err)
+
+	defer DeferredErrCheckStringArg(os.RemoveAll, dname)
+
+	testPlanFn := fmt.Sprintf("%v/testPlan.yaml", dname)
+	err = os.WriteFile(testPlanFn, []byte(fullPlan), 0644)
+	CheckError(err)
+
+	parsedPlan, err := ParsePlan(testPlanFn)
+	if err == nil {
+		t.Errorf("parsing plan %v succeeded where it should have failed!\nparsed plan is: %v", fullPlan, parsedPlan)
+	}
+
+	expectedErrType := yaml.TypeError{}
+
+	if !reflect.DeepEqual(reflect.TypeOf(err), reflect.TypeOf(&expectedErrType)) {
+		t.Errorf("unexpected error type!\nexpected: %v\nactual: %v", reflect.TypeOf(err), reflect.TypeOf(&expectedErrType))
+	}
+}
+
+func TestGitCloneToDir(t *testing.T) {
+	repo := "https://github.com/canonical/ubuntu-gui-testing.git"
+	branch := "main"
+	tmpDir, err := os.MkdirTemp("", "clonetest")
+	CheckError(err)
+
+	defer DeferredErrCheckStringArg(os.RemoveAll, tmpDir)
+
+	err = GitCloneToDir(repo, branch, tmpDir)
 	CheckError(err)
 }
