@@ -76,3 +76,15 @@ The spawner waits for tests that need a testbed, and then spawns a testbed for s
 ### Runner
 
 The runner application runs tests with `yarf` on testbeds provided by the `spawner` application, as specified by the job request sent to the api.
+
+## Utilities
+
+There are several utilities directories, but the most important are the `database` and `storage` packages.
+
+`database` and `storage` are pretty similar in ethos - they both are designed to provide an interface to multiple backends.
+
+The `database` backend currently only supports postgres, but is easily extendable to things like `sqlite`, and basically any database driver as a virtue of the [database/sql go module](https://pkg.go.dev/database/sql).
+
+The `storage` package is similar, and supports a `swift` backend and a `local` backend. The `local` backend exists for unit tests and local testing - the `swift` backend is for production instances.
+
+`utils` is just general purpose utilities used by all the other packages.
