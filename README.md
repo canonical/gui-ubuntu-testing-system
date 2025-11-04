@@ -32,7 +32,21 @@ Make sure you have postgres installed locally, and run:
 ./postgres/scripts/bootstrap-db.sh local no
 ```
 
-Start all the guts applications (the reporter is optional), and you will find the api running at:
+If you're running postgres as part of a charmed juju environment, the command would be:
+
+```
+./postgres/scripts/bootstrap-db.sh hosted no
+```
+
+But you must set the following environment variables first:
+
+```
+PG_HOST
+PG_PORT
+PG_USER
+```
+
+Then, start all the guts applications (the reporter is optional), and you will find the api running at:
 
 ```
 localhost:8080
