@@ -23,3 +23,4 @@ guts/storage/coverage.out
 guts/scheduler/cover.out
 guts/scheduler/coverage.out
 guts/cmd/scheduler/cover.out
+guts/cmd/api/api
