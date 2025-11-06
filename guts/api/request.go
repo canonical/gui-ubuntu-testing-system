@@ -8,6 +8,7 @@ import (
 	"guts.ubuntu.com/v2/database"
 	"guts.ubuntu.com/v2/utils"
 	"net/http"
+  "log"
 	"os"
 	"os/exec"
 	"regexp"
@@ -49,6 +50,7 @@ func ParseJobFromJson(jsonData []byte) (JobRequest, error) {
 
 // Don't need to test this directly, it's tested by api_test.go
 func ProcessJobRequest(cfgPath, apiKey string, jobReq JobRequest, driver database.DbDriver) (string, error) { // coverage-ignore
+  log.Printf("Processing job request %v", jobReq)
 	if apiKey == "" {
 		return "", EmptyApiKeyError{}
 	}
@@ -57,20 +59,26 @@ func ProcessJobRequest(cfgPath, apiKey string, jobReq JobRequest, driver databas
 	if err != nil {
 		return "", ApiKeyNotAcceptedError{}
 	}
+  log.Printf("Parsed user data: %v", userData)
 	if err = ValidateArtifactUrl(*jobReq.ArtifactUrl, cfgPath); err != nil {
 		return "", err
 	}
+  log.Printf("Validated artifact url")
 	if err = ValidateTestbedUrl(jobReq.TestBed, cfgPath); err != nil {
 		return "", err
 	}
+  log.Printf("Validated testbed url")
 	if err = ValidateTestData(jobReq.TestsRepoBranch, jobReq.TestsRepo, jobReq.TestsPlans); err != nil {
 		return "", err
 	}
 	jobRow := CreateJobEntry(jobReq, userData)
+  log.Printf("Writing the following row to the jobs table:\n%v", jobRow)
 	if err = WriteJobEntryToDb(jobRow, driver); err != nil { // coverage-ignore
 		return "", err
 	}
+  log.Printf("Written to db!")
 	returnJson := fmt.Sprintf(`{"uuid": "%v", "status_url": "%v"}`, jobRow.Uuid, GetStatusUrlForUuid(jobRow.Uuid, cfgPath))
+  log.Printf("Returning the following json:\n%v", returnJson)
 	return returnJson, nil
 }
 
