@@ -1,6 +1,6 @@
 database:
   driver: "postgres"
-  connection_string: "host=localhost port=5432 user=guts_spawner password=guts_spawner dbname=guts sslmode=disable"
+  connection_string: "host=localhost port=5433 user=guts_spawner password=guts_spawner dbname=guts sslmode=disable"
 virtualisation:
   memory: 4096
   cores: 8

@@ -225,7 +225,10 @@ func HandleNewJobRequests(Driver database.DbDriver) error {
 }
 
 func GetRunningJobs(Driver database.DbDriver) ([]string, error) {
+	/////////////////////////////
 	var uuids []string
+
+	log.Printf("getting running jobs")
 
 	rows, err := Driver.Query("jobs", "status", "running", []string{"uuid"})
 	if err != nil { // coverage-ignore
@@ -234,16 +237,19 @@ func GetRunningJobs(Driver database.DbDriver) ([]string, error) {
 
 	for rows.Next() {
 		var thisUuid string
+		log.Printf("running through rows")
 		err = rows.Scan(&thisUuid)
 		if err != nil { // coverage-ignore
 			return uuids, err
 		}
+		log.Printf("found job: %v", thisUuid)
 		uuids = append(uuids, thisUuid)
 	}
 
 	if err = rows.Err(); err != nil { // coverage-ignore
 		return uuids, err
 	}
+	log.Printf("got running jobs: %v", uuids)
 
 	return uuids, nil
 }
@@ -263,6 +269,9 @@ func UpdateCompleteJobs(Driver database.DbDriver) error {
 		return err
 	}
 
+	if len(runningUuids) < 1 {
+		return nil
+	}
 	log.Printf("checking if any of the following jobs have finished running yet:\n%v", runningUuids)
 
 	// check results of accompanying tests
@@ -285,6 +294,7 @@ func UpdateCompleteJobs(Driver database.DbDriver) error {
 }
 
 func GetFailedRowIdsForState(Driver database.DbDriver, interval, state string) ([]string, error) {
+	log.Printf("getting failed row ids for state %v", state)
 	var ids []string
 
 	idQuery := fmt.Sprintf(`SELECT id FROM tests WHERE state='%s' AND updated_at < (now() - interval '%s')`, state, interval)
@@ -312,20 +322,29 @@ func GetFailedRowIdsForState(Driver database.DbDriver, interval, state string) (
 		return ids, err
 	}
 
+	log.Printf("got ids: %v", ids)
+
 	return ids, nil
 }
 
 func BatchUpdateTestsWithRowIds(Driver database.DbDriver, field, value string, ids []string) error {
 	query := fmt.Sprintf(`UPDATE tests SET %s='%s' WHERE id IN (%s)`, field, value, strings.Join(ids, ", "))
+	log.Printf("running query: %v", query)
 	err := Driver.UpdateRow(query)
 	return err
 }
 
 func FixFailedSpawns(Driver database.DbDriver, interval string) error {
+	log.Printf("getting failed row ids...")
 	ids, err := GetFailedRowIdsForState(Driver, interval, "spawning")
 	if err != nil { // coverage-ignore
 		return err
 	}
+	if len(ids) == 0 {
+		log.Printf("no ids to update")
+		return nil
+	}
+	log.Printf("got row ids: %v", ids)
 	return BatchUpdateTestsWithRowIds(Driver, "state", "requested", ids)
 }
 
@@ -333,6 +352,10 @@ func FixFailedRuns(Driver database.DbDriver, interval string) error {
 	ids, err := GetFailedRowIdsForState(Driver, interval, "running")
 	if err != nil { // coverage-ignore
 		return err
+	}
+	if len(ids) == 0 {
+		log.Printf("no ids to update")
+		return nil
 	}
 	return BatchUpdateTestsWithRowIds(Driver, "state", "requested", ids)
 }
@@ -356,24 +379,32 @@ func DataRetentionPolicy(Driver database.DbDriver, backend storage.StorageBacken
 
 func SchedulerLoop(Driver database.DbDriver, SchedulerCfg GutsSchedulerConfig) error { // coverage-ignore
 
+	log.Printf("*********************************")
+	log.Printf("handling new job requests...")
 	// Scheduler step 1: handle new job requests
 	err := HandleNewJobRequests(Driver)
 	if err != nil {
 		return err
 	}
 
+	log.Printf("*********************************")
+	log.Printf("handling complete jobs...")
 	// Scheduler step 2: Update complete jobs
 	err = UpdateCompleteJobs(Driver)
 	if err != nil {
 		return err
 	}
 
+	log.Printf("*********************************")
+	log.Printf("fixing failed spawns...")
 	// Scheduler step 3: Check for failed spawner processes
 	err = FixFailedSpawns(Driver, SchedulerCfg.TestInactiveResetTime)
 	if err != nil {
 		return err
 	}
 
+	log.Printf("*********************************")
+	log.Printf("fixing failed runs...")
 	// Scheduler step 4: Check for failed runner processes
 	err = FixFailedRuns(Driver, SchedulerCfg.TestInactiveResetTime)
 	if err != nil {
@@ -386,8 +417,10 @@ func SchedulerLoop(Driver database.DbDriver, SchedulerCfg GutsSchedulerConfig) e
 		return err
 	}
 
+	log.Printf("*********************************")
+	log.Printf("running db and storage cleanup...")
 	// Scheduler step 5: Remove old objects and db entries
-	retentionDuration, err := time.ParseDuration(fmt.Sprintf("%vd", SchedulerCfg.ArtifactRetentionDays))
+	retentionDuration, err := time.ParseDuration(fmt.Sprintf("%vh", SchedulerCfg.ArtifactRetentionDays*24))
 	if err != nil {
 		return err
 	}

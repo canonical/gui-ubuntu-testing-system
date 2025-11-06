@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"guts.ubuntu.com/v2/utils"
+	"log"
 	"net/http"
 )
 
@@ -17,8 +18,10 @@ func RequestEndpoint(c *gin.Context) { // coverage-ignore
 		c.IndentedJSON(http.StatusBadRequest, gin.H{"message": fmt.Sprintf("Internal server error:\n%v", err.Error())})
 		return
 	}
+	log.Printf("Processing job request: %v\n", jobReq)
 	retJson, err := ProcessJobRequest(args.ConfigFilePath, bareKey, jobReq, Driver)
 	if err != nil {
+		log.Printf("job request failed! error:\n%v", err.Error())
 		switch t := err.(type) {
 		default: // coverage-ignore
 			c.IndentedJSON(http.StatusInternalServerError, gin.H{"message": fmt.Sprintf("Internal server error of type %v:\n%v", t, err.Error())})
@@ -47,12 +50,14 @@ func JobEndpoint(c *gin.Context) { // coverage-ignore
 	_, Driver, _, err := Setup()
 	utils.CheckError(err)
 	uuid := c.Param("uuid")
+	log.Printf("finding uuid: %v", uuid)
 	err = utils.ValidateUuid(uuid)
 	if err != nil {
 		c.IndentedJSON(http.StatusBadRequest, gin.H{"message": err.Error()})
 	}
 	job, err := GetCompleteResultsForUuid(uuid, Driver)
 	if err != nil {
+		log.Printf("error:\n%v", err.Error())
 		switch t := err.(type) {
 		default: // coverage-ignore
 			c.IndentedJSON(http.StatusInternalServerError, gin.H{"message": fmt.Sprintf("Internal server error of type %v:\n%v", t, err.Error())})

@@ -202,7 +202,7 @@ func TestGetFailedRowIdsForState(t *testing.T) {
 	Driver, err := database.TestDbDriver("guts_scheduler", "guts_scheduler")
 	utils.CheckError(err)
 
-	rowIds, err := GetFailedRowIdsForState(Driver, "2 minutes", "spawning")
+	rowIds, err := GetFailedRowIdsForState(Driver, "20 minutes", "spawning")
 	utils.CheckError(err)
 
 	expectedRowIds := []string{
@@ -217,7 +217,7 @@ func TestGetFailedRowIdsForState(t *testing.T) {
 		t.Errorf("unexpected row ids!\nexpected: %v\nactual: %v", expectedRowIds, rowIds)
 	}
 
-	rowIds, err = GetFailedRowIdsForState(Driver, "2 minutes", "running")
+	rowIds, err = GetFailedRowIdsForState(Driver, "20 minutes", "running")
 	utils.CheckError(err)
 
 	expectedRowIds = []string{
@@ -262,7 +262,7 @@ func TestFixFailedSpawns(t *testing.T) {
 		"67",
 	}
 
-	err = FixFailedSpawns(Driver, "2 minutes")
+	err = FixFailedSpawns(Driver, "20 minutes")
 	utils.CheckError(err)
 	err = BatchUpdateTestsWithRowIds(Driver, "state", "spawning", spawningRowIds)
 	utils.CheckError(err)
@@ -278,7 +278,7 @@ func TestFixFailedRuns(t *testing.T) {
 		"93",
 	}
 
-	err = FixFailedRuns(Driver, "2 minutes")
+	err = FixFailedRuns(Driver, "20 minutes")
 	utils.CheckError(err)
 	err = BatchUpdateTestsWithRowIds(Driver, "state", "running", runningRowIds)
 	utils.CheckError(err)
