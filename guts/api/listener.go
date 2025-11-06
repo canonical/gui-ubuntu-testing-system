@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"guts.ubuntu.com/v2/utils"
-  "log"
+	"log"
 	"net/http"
 )
 
@@ -18,7 +18,7 @@ func RequestEndpoint(c *gin.Context) { // coverage-ignore
 		c.IndentedJSON(http.StatusBadRequest, gin.H{"message": fmt.Sprintf("Internal server error:\n%v", err.Error())})
 		return
 	}
-  log.Printf("Processing job request: %v\n")
+	log.Printf("Processing job request: %v\n", jobReq)
 	retJson, err := ProcessJobRequest(args.ConfigFilePath, bareKey, jobReq, Driver)
 	if err != nil {
 		switch t := err.(type) {
