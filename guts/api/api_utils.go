@@ -18,13 +18,27 @@ func GetStatusUrlForUuid(uuid, cfgPath string) string {
 }
 
 func InsertJobsRow(job JobEntry, driver database.DbDriver) error {
-	allJobColumns := []string{"uuid", "artifact_url", "tests_repo", "tests_repo_branch", "tests_plans", "image_url", "reporter", "status", "submitted_at", "requester", "debug", "priority"}
+	allJobColumns := []string{
+    "uuid",
+    "artifact_url",
+    "tests_repo",
+    "tests_repo_branch",
+    "tests_plans",
+    "image_url",
+    "reporter",
+    "status",
+    "submitted_at",
+    "requester",
+    "debug",
+    "priority"
+  }
 	queryString := fmt.Sprintf(
 		`INSERT INTO jobs (%v) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)`,
 		strings.Join(allJobColumns, ", "),
 	)
 	stmt, err := driver.PrepareQuery(queryString)
 	if err != nil { // coverage-ignore
+    log.Printf(err.Error())
 		return err
 	}
 	defer utils.DeferredErrCheck(stmt.Close)
