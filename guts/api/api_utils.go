@@ -35,17 +35,10 @@ func InsertJobsRow(job JobEntry, driver database.DbDriver) error {
     "priority",
   }
 	queryString := fmt.Sprintf(
-		`INSERT INTO jobs (%v) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)`,
+		// `INSERT INTO jobs (%v) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)`,
+		`INSERT INTO jobs (%v) VALUES ('%v', '%v', '%v', '%v', '%v', '%v', '%v', '%v', '%v', '%v', %v, %v)`,
 		strings.Join(allJobColumns, ", "),
-	)
-	stmt, err := driver.PrepareQuery(queryString)
-	if err != nil { // coverage-ignore
-    log.Printf("failed to prepare query:\n%v\nwith:\n%v", queryString, err.Error())
-		return err
-	}
-	defer utils.DeferredErrCheck(stmt.Close)
-	_, err = stmt.Exec(
-		job.Uuid,
+    job.Uuid,
 		job.ArtifactUrl,
 		job.TestsRepo,
 		job.TestsRepoBranch,
@@ -57,6 +50,26 @@ func InsertJobsRow(job JobEntry, driver database.DbDriver) error {
 		job.Requester,
 		job.Debug,
 		job.Priority,
+	)
+	stmt, err := driver.PrepareQuery(queryString)
+	if err != nil { // coverage-ignore
+    log.Printf("failed to prepare query:\n%v\nwith:\n%v", queryString, err.Error())
+		return err
+	}
+	defer utils.DeferredErrCheck(stmt.Close)
+	_, err = stmt.Exec(
+		// job.Uuid,
+		// job.ArtifactUrl,
+		// job.TestsRepo,
+		// job.TestsRepoBranch,
+		// fmt.Sprintf(`{"%v"}`, strings.Join(job.TestsPlans, `","`)),
+		// job.ImageUrl,
+		// job.Reporter,
+		// job.Status,
+		// job.SubmittedAt,
+		// job.Requester,
+		// job.Debug,
+		// job.Priority,
 	)
   if err != nil {
     log.Printf("failed to execute statement %v", stmt)
