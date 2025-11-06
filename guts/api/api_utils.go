@@ -45,7 +45,8 @@ func InsertJobsRow(job JobEntry, driver database.DbDriver) error {
 		return err
 	}
 	defer utils.DeferredErrCheck(stmt.Close)
-	_, err = stmt.Exec(
+	// _, err = stmt.Exec(
+	_, err = stmt.Query(
 		job.Uuid,
 		job.ArtifactUrl,
 		job.TestsRepo,
