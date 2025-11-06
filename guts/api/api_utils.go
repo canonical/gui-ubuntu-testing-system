@@ -39,7 +39,7 @@ func InsertJobsRow(job JobEntry, driver database.DbDriver) error {
 	)
 	stmt, err := driver.PrepareQuery(queryString)
 	if err != nil { // coverage-ignore
-    log.Printf(err.Error())
+    log.Printf("failed to prepare query:\n%v\nwith:\n%v", queryString, err.Error())
 		return err
 	}
 	defer utils.DeferredErrCheck(stmt.Close)
@@ -57,6 +57,9 @@ func InsertJobsRow(job JobEntry, driver database.DbDriver) error {
 		job.Debug,
 		job.Priority,
 	)
+  if err != nil {
+    log.Printf("failed to execute statement %v", stmt)
+  }
 	return err
 }
 
