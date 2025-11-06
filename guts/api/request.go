@@ -255,6 +255,7 @@ func CreateJobEntry(job JobRequest, uData UserData) JobEntry { // coverage-ignor
 	thisJob.Requester = uData.Username
 	thisJob.Debug = job.Debug
 	thisJob.Priority = job.Priority
+  fmt.Printf("Created job entry:\n%v", thisJob)
 	return thisJob
 }
 
