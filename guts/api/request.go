@@ -59,13 +59,14 @@ func ProcessJobRequest(cfgPath, apiKey string, jobReq JobRequest, driver databas
   log.Printf("shakey: %v", shakey)
 	userData, jobReq, err := AuthorizeUserAndAssignPriority(shakey, jobReq, driver)
 	if err != nil {
-    log.Printf(err.Error())
 		return "", ApiKeyNotAcceptedError{}
 	}
   log.Printf("Parsed user data: %v", userData)
-	if err = ValidateArtifactUrl(*jobReq.ArtifactUrl, cfgPath); err != nil {
-		return "", err
-	}
+  if jobReq.ArtifactUrl != nil {
+    if err = ValidateArtifactUrl(*jobReq.ArtifactUrl, cfgPath); err != nil {
+      return "", err
+    }
+  }
   log.Printf("Validated artifact url")
 	if err = ValidateTestbedUrl(jobReq.TestBed, cfgPath); err != nil {
 		return "", err
