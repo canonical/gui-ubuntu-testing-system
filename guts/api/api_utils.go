@@ -48,7 +48,7 @@ func InsertJobsRow(job JobEntry, driver database.DbDriver) error {
 		job.ArtifactUrl,
 		job.TestsRepo,
 		job.TestsRepoBranch,
-		fmt.Sprintf(`{"%v"}`, strings.Join(job.TestsPlans, ",")),
+		fmt.Sprintf(`{"%v"}`, strings.Join(job.TestsPlans, `","`)),
 		job.ImageUrl,
 		job.Reporter,
 		job.Status,
