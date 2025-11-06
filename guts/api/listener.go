@@ -21,7 +21,7 @@ func RequestEndpoint(c *gin.Context) { // coverage-ignore
 	log.Printf("Processing job request: %v\n", jobReq)
 	retJson, err := ProcessJobRequest(args.ConfigFilePath, bareKey, jobReq, Driver)
 	if err != nil {
-    log.Printf("job request failed! error:\n%v", err.Error())
+		log.Printf("job request failed! error:\n%v", err.Error())
 		switch t := err.(type) {
 		default: // coverage-ignore
 			c.IndentedJSON(http.StatusInternalServerError, gin.H{"message": fmt.Sprintf("Internal server error of type %v:\n%v", t, err.Error())})

@@ -4,8 +4,9 @@ import (
 	"fmt"
 	"guts.ubuntu.com/v2/database"
 	"guts.ubuntu.com/v2/utils"
+  "github.com/lib/pq"
+	"log"
 	"reflect"
-  "log"
 	"strings"
 )
 
@@ -19,61 +20,48 @@ func GetStatusUrlForUuid(uuid, cfgPath string) string {
 }
 
 func InsertJobsRow(job JobEntry, driver database.DbDriver) error {
-  log.Printf("%v\n", job)
+	log.Printf("%v\n", job)
 	allJobColumns := []string{
-    "uuid",
-    "artifact_url",
-    "tests_repo",
-    "tests_repo_branch",
-    "tests_plans",
-    "image_url",
-    "reporter",
-    "status",
-    "submitted_at",
-    "requester",
-    "debug",
-    "priority",
-  }
+		"uuid",
+		"artifact_url",
+		"tests_repo",
+		"tests_repo_branch",
+		"tests_plans",
+		"image_url",
+		"reporter",
+		"status",
+		"submitted_at",
+		"requester",
+		"debug",
+		"priority",
+	}
 	queryString := fmt.Sprintf(
-		// `INSERT INTO jobs (%v) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)`,
-		`INSERT INTO jobs(%v) VALUES ('%v', '%v', '%v', '%v', '%v', '%v', '%v', '%v', current_timestamp, '%v', %v, %v)`,
+		`INSERT INTO jobs (%v) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)`,
 		strings.Join(allJobColumns, ", "),
-    job.Uuid,
-		job.ArtifactUrl,
-		job.TestsRepo,
-		job.TestsRepoBranch,
-		fmt.Sprintf(`{"%v"}`, strings.Join(job.TestsPlans, `","`)),
-		job.ImageUrl,
-		job.Reporter,
-		job.Status,
-		// job.SubmittedAt,
-		job.Requester,
-		job.Debug,
-		job.Priority,
 	)
 	stmt, err := driver.PrepareQuery(queryString)
 	if err != nil { // coverage-ignore
-    log.Printf("failed to prepare query:\n%v\nwith:\n%v", queryString, err.Error())
+		log.Printf("failed to prepare query:\n%v\nwith:\n%v", queryString, err.Error())
 		return err
 	}
 	defer utils.DeferredErrCheck(stmt.Close)
 	_, err = stmt.Exec(
-		// job.Uuid,
-		// job.ArtifactUrl,
-		// job.TestsRepo,
-		// job.TestsRepoBranch,
-		// fmt.Sprintf(`{"%v"}`, strings.Join(job.TestsPlans, `","`)),
-		// job.ImageUrl,
-		// job.Reporter,
-		// job.Status,
-		// job.SubmittedAt,
-		// job.Requester,
-		// job.Debug,
-		// job.Priority,
+    job.Uuid,
+    job.ArtifactUrl,
+    job.TestsRepo,
+    job.TestsRepoBranch,
+    pq.Array(job.TestsPlans),
+    job.ImageUrl,
+    job.Reporter,
+    job.Status,
+    job.SubmittedAt,
+    job.Requester,
+    job.Debug,
+    job.Priority,
 	)
-  if err != nil {
-    log.Printf("failed to execute statement %v", stmt)
-  }
+	if err != nil {
+		log.Printf("failed to execute statement %v", stmt)
+	}
 	return err
 }
 
