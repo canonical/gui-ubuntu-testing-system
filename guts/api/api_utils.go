@@ -30,7 +30,7 @@ func InsertJobsRow(job JobEntry, driver database.DbDriver) error {
     "submitted_at",
     "requester",
     "debug",
-    "priority"
+    "priority",
   }
 	queryString := fmt.Sprintf(
 		`INSERT INTO jobs (%v) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)`,
