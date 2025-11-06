@@ -21,7 +21,7 @@ func GetStatusUrlForUuid(uuid, cfgPath string) string {
 func InsertJobsRow(job JobEntry, driver database.DbDriver) error {
 	allJobColumns := []string{
     "uuid",
-    "artifact_url",
+    // "artifact_url",
     "tests_repo",
     "tests_repo_branch",
     "tests_plans",
@@ -35,24 +35,20 @@ func InsertJobsRow(job JobEntry, driver database.DbDriver) error {
   }
 	queryString := fmt.Sprintf(
 		`INSERT INTO jobs (%v) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)`,
-		// `INSERT INTO jobs (%v) VALUES ('$1', '$2', '$3', '$4', '$5', '$6', '$7', '$8', '$9', '$10', '$11', '$12')`,
 		strings.Join(allJobColumns, ", "),
 	)
-  // INSERT INTO users (username, key, maximum_priority) VALUES ('asdfman', 'ba580bf88cfbc949f4894c85f65e65932872073105cb79d44caafa416452fbf2', 100);
 	stmt, err := driver.PrepareQuery(queryString)
 	if err != nil { // coverage-ignore
     log.Printf("failed to prepare query:\n%v\nwith:\n%v", queryString, err.Error())
 		return err
 	}
 	defer utils.DeferredErrCheck(stmt.Close)
-	// _, err = stmt.Exec(
-	_, err = stmt.Query(
+	_, err = stmt.Exec(
 		job.Uuid,
-		job.ArtifactUrl,
+		// job.ArtifactUrl,
 		job.TestsRepo,
 		job.TestsRepoBranch,
 		fmt.Sprintf(`{%v}`, strings.Join(job.TestsPlans, ",")),
-		// job.TestsPlans,
 		job.ImageUrl,
 		job.Reporter,
 		job.Status,
