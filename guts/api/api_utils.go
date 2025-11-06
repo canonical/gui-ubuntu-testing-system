@@ -19,6 +19,7 @@ func GetStatusUrlForUuid(uuid, cfgPath string) string {
 }
 
 func InsertJobsRow(job JobEntry, driver database.DbDriver) error {
+  log.Printf(job)
 	allJobColumns := []string{
     "uuid",
     "artifact_url",
