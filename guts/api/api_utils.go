@@ -36,7 +36,7 @@ func InsertJobsRow(job JobEntry, driver database.DbDriver) error {
   }
 	queryString := fmt.Sprintf(
 		// `INSERT INTO jobs (%v) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)`,
-		`INSERT INTO jobs (%v) VALUES ('%v', '%v', '%v', '%v', '%v', '%v', '%v', '%v', '%v', '%v', %v, %v)`,
+		`INSERT INTO jobs (%v) VALUES ('%v', '%v', '%v', '%v', '%v', '%v', '%v', '%v', current_timestamp, '%v', %v, %v)`,
 		strings.Join(allJobColumns, ", "),
     job.Uuid,
 		job.ArtifactUrl,
@@ -46,7 +46,7 @@ func InsertJobsRow(job JobEntry, driver database.DbDriver) error {
 		job.ImageUrl,
 		job.Reporter,
 		job.Status,
-		job.SubmittedAt,
+		// job.SubmittedAt,
 		job.Requester,
 		job.Debug,
 		job.Priority,
