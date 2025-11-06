@@ -5,6 +5,7 @@ import (
 	"guts.ubuntu.com/v2/database"
 	"guts.ubuntu.com/v2/utils"
 	"reflect"
+  "log"
 	"strings"
 )
 
