@@ -54,6 +54,7 @@ func ProcessJobRequest(cfgPath, apiKey string, jobReq JobRequest, driver databas
 	if apiKey == "" {
 		return "", EmptyApiKeyError{}
 	}
+  log.Printf("given api key: %v", apiKey)
 	shakey := utils.Sha256sumOfString(apiKey)
   log.Printf("shakey: %v", shakey)
 	userData, jobReq, err := AuthorizeUserAndAssignPriority(shakey, jobReq, driver)
