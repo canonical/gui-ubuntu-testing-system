@@ -38,6 +38,7 @@ func InsertJobsRow(job JobEntry, driver database.DbDriver) error {
 		// `INSERT INTO jobs (%v) VALUES ('$1', '$2', '$3', '$4', '$5', '$6', '$7', '$8', '$9', '$10', '$11', '$12')`,
 		strings.Join(allJobColumns, ", "),
 	)
+  // INSERT INTO users (username, key, maximum_priority) VALUES ('asdfman', 'ba580bf88cfbc949f4894c85f65e65932872073105cb79d44caafa416452fbf2', 100);
 	stmt, err := driver.PrepareQuery(queryString)
 	if err != nil { // coverage-ignore
     log.Printf("failed to prepare query:\n%v\nwith:\n%v", queryString, err.Error())
