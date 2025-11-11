@@ -375,6 +375,10 @@ func SpawnerLoop(Driver database.DbDriver, SpawnerCfg GutsSpawnerConfig) error {
 	if err != nil {
 		return err
 	}
+  log.Println("=========================")
+  log.Println("vm process:")
+  log.Println(vmProcess)
+  log.Println("=========================")
 	// set state to spawned
   log.Printf("setting state to 'spawned'...")
 	err = Driver.SetTestStateTo(id, "spawned")
