@@ -40,6 +40,7 @@ func InsertJobsRow(job JobEntry, driver database.DbDriver) error {
 		strings.Join(allJobColumns, ", "),
 	)
 	stmt, err := driver.PrepareQuery(queryString)
+  log.Printf("Statement:\n%v", stmt)
 	if err != nil { // coverage-ignore
 		log.Printf("failed to prepare query:\n%v\nwith:\n%v", queryString, err.Error())
 		return err
