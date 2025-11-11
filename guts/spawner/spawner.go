@@ -152,6 +152,7 @@ func IdenticalLocalAndRemoteShasum(imageUrl, imagePath string) bool {
   log.Printf("checking local vs remote shasum...")
 	remoteShasum, err := GetRemoteShaSum(imageUrl)
 	if err != nil {
+    log.Printf(err.Error())
 		return false
 	}
   log.Printf("remote shasum: %v", remoteShasum)
