@@ -50,6 +50,10 @@ func InsertJobsRow(job JobEntry, driver database.DbDriver) error {
   plansArr := pq.Array(job.TestsPlans)
   // plansArr := fmt.Sprintf(`'\{\"%v\"\}'`, strings.Join(job.TestsPlans, `\",\"`))
   // plansArr := fmt.Sprintf(`ARRAY ['%v']`, strings.Join(job.TestsPlans, `','`))
+  arrVal, _ := plansArr.Value()
+  log.Printf("***********************************************************")
+  log.Printf(arrVal)
+  log.Printf("***********************************************************")
 
   log.Printf("*************************\ntest plans:\n%v\n", plansArr)
 	_, err = stmt.Exec(
