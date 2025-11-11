@@ -54,6 +54,7 @@ func DomainsAndInterfaces() map[string]map[string]func(string) (string, error) {
 	m := make(map[string]map[string]func(string) (string, error))
 	cdimageMap := map[string]func(string) (string, error){"shasum": CdImageGetShasumOfImage}
 	m["cdimage.ubuntu.com"] = cdimageMap
+	m["releases.ubuntu.com"] = cdimageMap
 	m["localhost"] = cdimageMap
 	return m
 }
