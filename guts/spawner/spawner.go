@@ -169,10 +169,12 @@ func AtomicDownloadImageToPath(imageUrl, imagePath string) error {
   log.Printf("image downloaded!")
 	b, err := io.ReadAll(resp.Body)
 	if err != nil { // coverage-ignore
+    log.Printf(err.Error())
 		return err
 	}
 	err = resp.Body.Close()
 	if err != nil { // coverage-ignore
+    log.Printf(err.Error())
 		return err
 	}
 
