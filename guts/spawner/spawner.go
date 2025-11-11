@@ -386,6 +386,7 @@ func SpawnerLoop(Driver database.DbDriver, SpawnerCfg GutsSpawnerConfig) error {
 	// define how often we check the test state
   log.Printf("defining heartbeat duration")
 	heartbeatDuration := time.Second * 5
+  log.Printf("duration: %v", heartbeatDuration)
 	// wait for either the qemu process to die or the test to finish
 	for !vmProcess.ProcessState.Exited() || finished {
 		// get the test state
