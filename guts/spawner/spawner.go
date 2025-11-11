@@ -45,6 +45,7 @@ func FindHighestPrioUuid(Driver database.DbDriver) (string, error) {
 	if err != nil { // coverage-ignore
     log.Printf(err.Error())
 		if err == sql.ErrNoRows {
+      log.Printf("found no uuids")
 			return "", nil
 		} else {
 			return "", err
@@ -193,7 +194,7 @@ func AtomicDownloadImageToPath(imageUrl, imagePath string) error {
   log.Printf("writing to disk...")
   out, err := os.Create(newFile)
 
-  _, err = io.Copy(out, resp.Body)
+  _, err  io.Copy(out, resp.Body)
 	if err != nil { // coverage-ignore
 		return err
 	}
