@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"os"
 	"os/exec"
+  "log"
 	"slices"
 	"strings"
 	"time"
@@ -236,7 +237,9 @@ func GetTestState(id int, Driver database.DbDriver) (string, error) {
 }
 
 func SpawnerLoop(Driver database.DbDriver, SpawnerCfg GutsSpawnerConfig) error { // coverage-ignore
+  log.Printf("starting spawner loop...")
 	// Find the requested job with the highest priority
+  log.Printf("finding highest prio uuid...")
 	uuid, err := FindHighestPrioUuid(Driver)
 	// Perform a standard error check
 	if err != nil {
@@ -246,46 +249,59 @@ func SpawnerLoop(Driver database.DbDriver, SpawnerCfg GutsSpawnerConfig) error {
 	if uuid == "" {
 		return nil
 	}
+  log.Printf("found uuid: %v", uuid)
 	// Get the id of the individual test
+  log.Printf("finding row ids for %v in state 'requested'", uuid)
 	id, err := FindRowIdForUuidInStateRequested(uuid, Driver)
 	if err != nil {
 		return err
 	}
+  log.Printf("found id: %v", id)
 	// Set the test state to spawning to indicate we are spawning the VM
+  log.Printf("setting state to 'spawning'")
 	err = Driver.SetTestStateTo(id, "spawning")
 	if err != nil {
 		return err
 	}
+  log.Printf("updating heartbeat timestamp")
 	// Update the heartbeat timestamp
 	err = database.UpdateUpdatedAt(id, Driver)
 	if err != nil {
 		return err
 	}
 	// Set the vncaddress field to state where the test is running
+  log.Printf("setting vnc address")
 	err = SetVncAddressForId(id, Driver)
 	if err != nil {
 		return err
 	}
 	// Update the heartbeat timestamp
+  log.Printf("updating heartbeat timestamp")
 	err = database.UpdateUpdatedAt(id, Driver)
 	if err != nil {
 		return err
 	}
 	// Get the url for the image for the test
+  log.Printf("getting image url")
 	imageUrl, err := GetImageUrl(id, Driver)
 	if err != nil {
 		return err
 	}
+  log.Printf("got url: %v", imageUrl)
 	// Parse test requirements from the db
+  log.Printf("getting test requirements...")
 	requirements, err := GetTestRequirements(id, imageUrl, Driver)
 	if err != nil {
 		return err
 	}
+  log.Printf("got requirements: %v", requirements)
 	// Download the image to a local path
+  log.Printf("downloading image...")
 	imagePath, err := DownloadImage(imageUrl, SpawnerCfg)
 	if err != nil {
 		return err
 	}
+  log.Printf("image downloaded to: %v", imagePath)
 	// the diskpath and image path are the same if an image is pre-installed
 	// otherwise they differ
 	DiskPath := imagePath
@@ -300,17 +316,22 @@ func SpawnerLoop(Driver database.DbDriver, SpawnerCfg GutsSpawnerConfig) error {
 	// Get the appropriate qemu command line given the test requirements
 	qemuCmdLine := GetQemuCmdLine(imagePath, DiskPath, requirements, SpawnerCfg)
 
+  log.Printf("got qemu cmd line: %v", qemuCmdLine)
+
 	// spawn the qemu VM
+  log.Printf("spawning VM...")
 	vmProcess, err := SpawnVm(qemuCmdLine)
 	if err != nil {
 		return err
 	}
 	// set state to spawned
+  log.Printf("setting state to 'spawned'...")
 	err = Driver.SetTestStateTo(id, "spawned")
 	if err != nil {
 		return err
 	}
 	// update the heartbeat ts
+  log.Printf("updating heartbeat timestamp")
 	err = database.UpdateUpdatedAt(id, Driver)
 	if err != nil {
 		return err
@@ -324,18 +345,22 @@ func SpawnerLoop(Driver database.DbDriver, SpawnerCfg GutsSpawnerConfig) error {
 	// wait for either the qemu process to die or the test to finish
 	for !vmProcess.ProcessState.Exited() || finished {
 		// get the test state
+    log.Printf("getting test state...")
 		state, err := GetTestState(id, Driver)
 		if err != nil {
 			return err
 		}
+    log.Printf("got test state: %v", state)
 		// see if it's in a "finished" state
 		if slices.Contains(finishStates, state) {
+      log.Printf("job finished!")
 			finished = true
 		}
 		// Only update the heartbeat timestamp
 		// when the runner is not already running the test
 		if state != "running" {
 			// update the heartbeat ts
+      log.Printf("updating heartbeat timestamp")
 			err = database.UpdateUpdatedAt(id, Driver)
 			if err != nil {
 				return err
@@ -346,14 +371,17 @@ func SpawnerLoop(Driver database.DbDriver, SpawnerCfg GutsSpawnerConfig) error {
 	}
 	if !finished {
 		// we reach this if the VM dies unexpectedly, set the state back to requested
+    log.Printf("setting state back to 'requested'")
 		err = Driver.SetTestStateTo(id, "requested")
 		return err
 	}
 	// kill the VM
+  log.Printf("killing vm")
 	err = vmProcess.Process.Kill()
 	if err != nil {
 		return err
 	}
+  log.Printf("spawner loop over")
 	// remove the disk
 	err = os.Remove(DiskPath)
 	return err

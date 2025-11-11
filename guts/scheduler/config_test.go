@@ -19,7 +19,7 @@ func TestParseConfigLocal(t *testing.T) {
 	expectedCfg.Storage["object_host"] = "http://localhost"
 	expectedCfg.Database.Driver = "postgres"
 	expectedCfg.Database.ConnectionString = "host=localhost port=5432 user=guts_api password=guts_api dbname=guts sslmode=disable"
-	expectedCfg.TestInactiveResetTime = "2 minutes"
+	expectedCfg.TestInactiveResetTime = "20 minutes"
 	expectedCfg.ArtifactRetentionDays = 180
 
 	if !reflect.DeepEqual(expectedCfg, schedulerCfg) {
