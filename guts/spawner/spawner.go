@@ -130,7 +130,6 @@ func DownloadImage(imageUrl string, SpawnerCfg GutsSpawnerConfig) (string, error
   log.Printf("checking if image already exists...")
 	err := utils.FileOrDirExists(imagePath)
 	if err == nil {
-    log.Printf("checking local vs remote shasum...")
 		if IdenticalLocalAndRemoteShasum(imageUrl, imagePath) {
       log.Printf("image already cached!")
 			return imagePath, nil
@@ -150,14 +149,17 @@ func DownloadImage(imageUrl string, SpawnerCfg GutsSpawnerConfig) (string, error
 }
 
 func IdenticalLocalAndRemoteShasum(imageUrl, imagePath string) bool {
+  log.Printf("checking local vs remote shasum...")
 	remoteShasum, err := GetRemoteShaSum(imageUrl)
 	if err != nil {
 		return false
 	}
+  log.Printf("remote shasum: %v", remoteShasum)
 	localShasum, err := GetLocalShaSum(imagePath)
 	if err != nil {
 		return false
 	}
+  log.Printf("local sha sum: %v", localShasum)
 	if localShasum == remoteShasum {
 		return true
 	}
