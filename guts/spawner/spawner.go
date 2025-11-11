@@ -137,8 +137,11 @@ func DownloadImage(imageUrl string, SpawnerCfg GutsSpawnerConfig) (string, error
   log.Printf("image doesn't exist, downloading...")
 	err = AtomicDownloadImageToPath(imageUrl, imagePath)
 	if err != nil { // coverage-ignore
+    log.Printf(err.Error())
 		return "", err
 	}
+
+  log.Printf("%v downloaded to %v", imageName, imagePath)
 
 	return imagePath, nil
 }
