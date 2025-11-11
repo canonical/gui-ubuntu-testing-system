@@ -288,7 +288,7 @@ func GetTestState(id int, Driver database.DbDriver) (string, error) {
 }
 
 func PidActive(pid int) bool {
-  process, err := os.FindProcess(pid)
+  _, err := os.FindProcess(pid)
   if err != nil {
     return false
   }
