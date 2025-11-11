@@ -259,7 +259,10 @@ func SpawnVm(cmdLine []string) (*exec.Cmd, error) { // coverage-ignore
 	qemuVmCreateCmd.Args = cmdLine
   log.Println(qemuVmCreateCmd)
 	err := qemuVmCreateCmd.Start()
-	return &qemuVmCreateCmd, err
+  if err != nil {
+    log.Printf(err.Error())
+  }
+	return qemuVmCreateCmd, err
 }
 
 func GetTestState(id int, Driver database.DbDriver) (string, error) {
