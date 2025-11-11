@@ -54,7 +54,7 @@ func InsertJobsRow(job JobEntry, driver database.DbDriver) error {
   inputString := arrVal.(string)
   log.Printf("***********************************************************")
   // inputString = strings.Replace(inputString, `"`, "$", -1)
-  inputString = strings.Replace(inputString, `/`, `\\/`, -1)
+  // inputString = strings.Replace(inputString, `/`, `\\/`, -1)
   log.Printf(inputString)
   log.Printf("***********************************************************")
 
