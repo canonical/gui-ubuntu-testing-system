@@ -259,7 +259,7 @@ func SpawnVm(cmdLine []string) (*exec.Cmd, error) { // coverage-ignore
 	qemuVmCreateCmd.Args = cmdLine
   log.Println(qemuVmCreateCmd)
 	err := qemuVmCreateCmd.Start()
-	return qemuVmCreateCmd, err
+	return &qemuVmCreateCmd, err
 }
 
 func GetTestState(id int, Driver database.DbDriver) (string, error) {
@@ -388,7 +388,8 @@ func SpawnerLoop(Driver database.DbDriver, SpawnerCfg GutsSpawnerConfig) error {
 	heartbeatDuration := time.Second * 5
   log.Printf("duration: %v", heartbeatDuration)
 	// wait for either the qemu process to die or the test to finish
-  log.Printf("vm state: %v", vmProcess)
+  log.Printf("vm state:")
+  log.Printf("%v", vmProcess)
 	for !vmProcess.ProcessState.Exited() || finished {
 		// get the test state
     log.Printf("getting test state...")
