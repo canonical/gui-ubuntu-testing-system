@@ -48,7 +48,8 @@ func InsertJobsRow(job JobEntry, driver database.DbDriver) error {
 	defer utils.DeferredErrCheck(stmt.Close)
 
   plansArr := pq.Array(job.TestsPlans)
-  log.Printf(plansArr.Value())
+  val, _ := plansArr.Value()
+  log.Printf(val)
   // plansArr := fmt.Sprintf(`'\{\"%v\"\}'`, strings.Join(job.TestsPlans, `\",\"`))
   // plansArr := fmt.Sprintf(`ARRAY ['%v']`, strings.Join(job.TestsPlans, `','`))
 
