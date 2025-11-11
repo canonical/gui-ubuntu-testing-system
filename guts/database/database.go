@@ -151,7 +151,7 @@ func (p PgOperationInterface) InterfaceQuery(table, queryField, queryValue strin
   //////////
   // What happening?
 	var rows *sql.Rows
-	queryString := fmt.Sprintf("SELECT %v FROM %v WHERE %v='$1'", strings.Join(fields, ", "), table, queryField)
+	queryString := fmt.Sprintf("SELECT %v FROM %v WHERE %v=$1", strings.Join(fields, ", "), table, queryField)
 	log.Printf("running query %v with query parameter %v\n", queryString, queryValue)
 	stmt, err := p.Db.Prepare(queryString)
 	if err != nil { // coverage-ignore
