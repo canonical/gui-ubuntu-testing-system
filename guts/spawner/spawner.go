@@ -33,6 +33,7 @@ func CreateCacheIfNotExists(SpawnerCfg GutsSpawnerConfig) error {
 func FindHighestPrioUuid(Driver database.DbDriver) (string, error) {
 	var uuid string
 	jobQuery := `SELECT tests.uuid FROM tests JOIN jobs ON jobs.uuid=tests.uuid WHERE state='requested' ORDER BY priority DESC LIMIT 1`
+  log.Printf("running query: %v", jobQuery)
 	row, err := Driver.RunQueryRow(jobQuery)
 	if err != nil { // coverage-ignore
 		return uuid, err
@@ -40,6 +41,7 @@ func FindHighestPrioUuid(Driver database.DbDriver) (string, error) {
 	err = row.Scan(
 		&uuid,
 	)
+  log.Printf("query complete")
 	if err != nil { // coverage-ignore
 		if err == sql.ErrNoRows {
 			return "", nil
