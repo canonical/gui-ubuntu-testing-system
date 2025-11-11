@@ -404,6 +404,7 @@ func SpawnerLoop(Driver database.DbDriver, SpawnerCfg GutsSpawnerConfig) error {
   log.Printf("vm state:")
   log.Printf("%v", vmProcess)
   log.Printf("%v", vmProcess.Process)
+  log.Printf("%v", vmProcess.Process.Pid)
   log.Printf("%v", vmProcess.ProcessState)
   log.Printf("%v", vmProcess.ProcessState.Exited())
 	for !vmProcess.ProcessState.Exited() || finished {
