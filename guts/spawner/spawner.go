@@ -256,6 +256,7 @@ func CreateQcowDisk(requirements TestRequirements, Uuid string, SpawnerCfg GutsS
 func SpawnVm(cmdLine []string) (*exec.Cmd, error) { // coverage-ignore
 	qemuVmCreateCmd := exec.Command("")
 	qemuVmCreateCmd.Args = cmdLine
+  log.Println(qemuVmCreateCmd)
 	err := qemuVmCreateCmd.Start()
 	return qemuVmCreateCmd, err
 }
