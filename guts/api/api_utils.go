@@ -65,7 +65,7 @@ func InsertJobsRow(job JobEntry, driver database.DbDriver) error {
 		job.TestsRepo,
 		job.TestsRepoBranch,
     // plansArr,
-    fmt.Sprintf(`'%v'`, inputString),
+    fmt.Sprintf(`'%v'::string[]`, inputString),
     // fmt.Sprintf(`'{%v}'`, inputString),
 		job.ImageUrl,
 		job.Reporter,
