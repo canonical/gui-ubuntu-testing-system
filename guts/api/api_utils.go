@@ -15,7 +15,11 @@ func GetStatusUrlForUuid(uuid, cfgPath string) string {
 	if err != nil { // coverage-ignore
 		return ""
 	}
-	statusUrl := fmt.Sprintf("%v%v/job/%v", utils.GetProtocolPrefix(gutsCfg.Api.Port), gutsCfg.Api.Hostname, uuid)
+  hostname := gutsCfg.Api.Hostname
+  if hostname == "localhost" {
+    hostname = fmt.Sprintf("%v:%v", hostname, gutsCfg.Api.Port)
+  }
+	statusUrl := fmt.Sprintf("%v%v/job/%v", utils.GetProtocolPrefix(gutsCfg.Api.Port), hostname, uuid)
 	return statusUrl
 }
 

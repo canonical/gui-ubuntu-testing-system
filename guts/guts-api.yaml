@@ -6,7 +6,7 @@ database:
   # driver: "sqlite"
   # connection_string: "/path/to/sqlite.db"
 api:
-  hostname: "localhost:8080"
+  hostname: "localhost"
   port: 8080
   artifact_domains:
     - launchpad.net
