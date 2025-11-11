@@ -169,17 +169,17 @@ func AtomicDownloadImageToPath(imageUrl, imagePath string) error {
 		return err
 	}
 	defer utils.DeferredErrCheck(resp.Body.Close)
-  log.Printf("image downloaded!")
-	b, err := io.ReadAll(resp.Body)
-	if err != nil { // coverage-ignore
-    log.Printf(err.Error())
-		return err
-	}
-	err = resp.Body.Close()
-	if err != nil { // coverage-ignore
-    log.Printf(err.Error())
-		return err
-	}
+  // log.Printf("image downloaded!")
+	// b, err := io.ReadAll(resp.Body)
+	// if err != nil { // coverage-ignore
+  //   log.Printf(err.Error())
+	// 	return err
+	// }
+	// err = resp.Body.Close()
+	// if err != nil { // coverage-ignore
+  //   log.Printf(err.Error())
+	// 	return err
+	// }
 
   log.Printf("creating parent directories if necessary...")
 	splitPath := strings.Split(imagePath, "/")
@@ -191,10 +191,23 @@ func AtomicDownloadImageToPath(imageUrl, imagePath string) error {
 	}
 
   log.Printf("writing to disk...")
-	err = os.WriteFile(newFile, b, 0644)
+  out, err := os.Create(newFile)
+
+  _, err := io.Copy(out, resp.Body)
 	if err != nil { // coverage-ignore
 		return err
 	}
+
+  err = out.Close()
+	if err != nil { // coverage-ignore
+		return err
+	}
+
+	// err = os.WriteFile(newFile, b, 0644)
+	// if err != nil { // coverage-ignore
+	// 	return err
+	// }
+
 	err = os.Rename(newFile, imagePath)
   if err != nil { // coverage-ignore
     return err
