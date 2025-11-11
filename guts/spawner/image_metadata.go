@@ -47,6 +47,7 @@ func GetRemoteShaSum(imageUrl string) (string, error) {
 			return shasum, err
 		}
 	}
+  log.Printf("%v is not from a supported domain", imageUrl)
 	return "", fmt.Errorf("Couldn't acquire shasum of image at %v", imageUrl)
 }
 
