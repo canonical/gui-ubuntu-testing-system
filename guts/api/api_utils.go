@@ -50,7 +50,10 @@ func InsertJobsRow(job JobEntry, driver database.DbDriver) error {
 		job.ArtifactUrl,
 		job.TestsRepo,
 		job.TestsRepoBranch,
-		pq.Array(job.TestsPlans),
+    // string interpolation, replace `/` with `\/` ?
+    // '{"tests/firefox-example/plans/regular.yaml"}'
+    fmt.Sprintf(`'{E"%v"}'`, strings.Join(job.TestsPlans, `",E"`)),
+		// pq.Array(job.TestsPlans),
 		// job.TestsPlans,
 		job.ImageUrl,
 		job.Reporter,
