@@ -208,7 +208,11 @@ func (p PgOperationInterface) UpdateUpdatedAt(id int) error {
 	}
 	defer utils.DeferredErrCheck(stmt.Close)
 	_, err = stmt.Exec(ts, id)
-	return err
+  if err != nil {
+    log.Printf(err.Error())
+    return err
+  }
+	return nil
 }
 
 func (p PgOperationInterface) DeleteUuidFromTable(uuid, table string) error {
