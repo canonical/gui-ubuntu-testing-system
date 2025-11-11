@@ -8,6 +8,7 @@ import (
 	"io/ioutil"
   "log"
 	"net/http"
+  "io"
 	"os"
 	"regexp"
 	"strings"
@@ -32,7 +33,7 @@ func GetLocalShaSum(pathToFile string) (string, error) {
   if _, err := io.Copy(h, f); err != nil {
     return "", err
   }
-  return hex.EncodeToString(h.Sum(nil))
+  return hex.EncodeToString(h.Sum(nil)), nil
 
 
 	// dat, err := os.ReadFile(pathToFile)
