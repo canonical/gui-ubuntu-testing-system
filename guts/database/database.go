@@ -162,6 +162,7 @@ func (p PgOperationInterface) InterfaceQuery(table, queryField, queryValue strin
   log.Printf("%v", stmt)
 	rows, err = stmt.Query(queryValue)
 	if err != nil { // coverage-ignore
+    log.Printf("Are we failing here?")
     log.Printf(err.Error())
 		return rows, err
 	}
