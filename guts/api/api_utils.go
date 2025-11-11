@@ -45,12 +45,16 @@ func InsertJobsRow(job JobEntry, driver database.DbDriver) error {
 		return err
 	}
 	defer utils.DeferredErrCheck(stmt.Close)
-  // plansArr := strings.Replace(fmt.Sprintf(`'{E"%v"}'`, strings.Join(job.TestsPlans, `",E"`)), "/", `\/`, -1),
-  // plansArr := fmt.Sprintf(`'{E'%v'}'`, strings.Join(job.TestsPlans, `",E"`))
-  // plansArr = strings.Replace(plansArr, "/", `\/`, -1)
 
-  plansArr := pq.Array(job.TestsPlans)
-  // plansArr := fmt.Sprintf(`ARRAY ['%v']`, strings.Join(job.TestsPlans, `','`))
+  tmpPlans := job.TestsPlans
+  tmpPlans := make([]string, len(job.TestsPlans))
+  for idx, entry := range job.TestsPlans {
+    tmpPlans[idx] = strings.Replace(entry, "/", `\/`, -1)
+  }
+  // plansArr := pq.Array(job.TestsPlans)
+  plansArr := pq.Array(tmpPlans)
+  // convert plansArr to escape the forward slashes here.
+  // there's something funky happening in the database/sql library I believe.
 
   log.Printf("%v\n", plansArr)
 	_, err = stmt.Exec(
