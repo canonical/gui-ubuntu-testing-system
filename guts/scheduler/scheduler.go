@@ -237,6 +237,7 @@ func GetRunningJobs(Driver database.DbDriver) ([]string, error) {
 
 	for rows.Next() {
 		var thisUuid string
+    log.Printf("running through rows")
 		err = rows.Scan(&thisUuid)
 		if err != nil { // coverage-ignore
 			return uuids, err
