@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"guts.ubuntu.com/v2/utils"
 	"io/ioutil"
+  "log"
 	"net/http"
 	"os"
 	"regexp"
@@ -35,10 +36,13 @@ func GetRemoteShaSum(imageUrl string) (string, error) {
 		supportedDomains[ctr] = idx
 		ctr = ctr + 1
 	}
+  log.Printf("supported domains: %v", supportedDomains)
 	for _, domain := range supportedDomains {
+    log.Printf("checking against domain: %v", domain)
 		thisRegex := fmt.Sprintf(`(http|https):\/\/%v(.*)`, domain)
 		match := regexp.MustCompile(thisRegex).MatchString(imageUrl)
 		if match {
+      log.Printf("domain supported!")
 			shasum, err := domainsFunctions[domain]["shasum"](imageUrl)
 			return shasum, err
 		}
