@@ -365,24 +365,32 @@ func DataRetentionPolicy(Driver database.DbDriver, backend storage.StorageBacken
 
 func SchedulerLoop(Driver database.DbDriver, SchedulerCfg GutsSchedulerConfig) error { // coverage-ignore
 
+  log.Printf("*********************************")
+  log.Printf("handling new job requests...")
 	// Scheduler step 1: handle new job requests
 	err := HandleNewJobRequests(Driver)
 	if err != nil {
 		return err
 	}
 
+  log.Printf("*********************************")
+  log.Printf("handling complete jobs...")
 	// Scheduler step 2: Update complete jobs
 	err = UpdateCompleteJobs(Driver)
 	if err != nil {
 		return err
 	}
 
+  log.Printf("*********************************")
+  log.Printf("fixing failed spawns...")
 	// Scheduler step 3: Check for failed spawner processes
 	err = FixFailedSpawns(Driver, SchedulerCfg.TestInactiveResetTime)
 	if err != nil {
 		return err
 	}
 
+  log.Printf("*********************************")
+  log.Printf("fixing failed runs...")
 	// Scheduler step 4: Check for failed runner processes
 	err = FixFailedRuns(Driver, SchedulerCfg.TestInactiveResetTime)
 	if err != nil {
@@ -395,6 +403,8 @@ func SchedulerLoop(Driver database.DbDriver, SchedulerCfg GutsSchedulerConfig) e
 		return err
 	}
 
+  log.Printf("*********************************")
+  log.Printf("running db and storage cleanup...")
 	// Scheduler step 5: Remove old objects and db entries
 	retentionDuration, err := time.ParseDuration(fmt.Sprintf("%vd", SchedulerCfg.ArtifactRetentionDays))
 	if err != nil {
