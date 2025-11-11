@@ -287,6 +287,14 @@ func GetTestState(id int, Driver database.DbDriver) (string, error) {
 	return state, nil
 }
 
+func PidActive(pid int) bool {
+  process, err := os.FindProcess(pid)
+  if err != nil {
+    return false
+  }
+  return true
+}
+
 func SpawnerLoop(Driver database.DbDriver, SpawnerCfg GutsSpawnerConfig) error { // coverage-ignore
   log.Printf("starting spawner loop...")
 	// Find the requested job with the highest priority
@@ -405,9 +413,7 @@ func SpawnerLoop(Driver database.DbDriver, SpawnerCfg GutsSpawnerConfig) error {
   log.Printf("%v", vmProcess)
   log.Printf("%v", vmProcess.Process)
   log.Printf("%v", vmProcess.Process.Pid)
-  log.Printf("%v", vmProcess.ProcessState)
-  log.Printf("%v", vmProcess.ProcessState.Exited())
-	for !vmProcess.ProcessState.Exited() || finished {
+	for PidActive(vmProcess.Process.Pid) || finished {
 		// get the test state
     log.Printf("getting test state...")
 		state, err := GetTestState(id, Driver)
