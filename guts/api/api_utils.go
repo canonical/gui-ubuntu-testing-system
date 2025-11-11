@@ -46,15 +46,7 @@ func InsertJobsRow(job JobEntry, driver database.DbDriver) error {
 	}
 	defer utils.DeferredErrCheck(stmt.Close)
 
-  // tmpPlans := job.TestsPlans
-  // tmpPlans = make([]string, len(job.TestsPlans))
-  // for idx, entry := range job.TestsPlans {
-  //   tmpPlans[idx] = strings.Replace(entry, "/", `\\/`, -1)
-  // }
   plansArr := pq.Array(job.TestsPlans)
-  // plansArr := pq.Array(tmpPlans)
-  // convert plansArr to escape the forward slashes here.
-  // there's something funky happening in the database/sql library I believe.
 
   log.Printf("%v\n", plansArr)
 	_, err = stmt.Exec(
@@ -62,14 +54,7 @@ func InsertJobsRow(job JobEntry, driver database.DbDriver) error {
 		job.ArtifactUrl,
 		job.TestsRepo,
 		job.TestsRepoBranch,
-    // string interpolation, replace `/` with `\/` ?
-    // '{"tests/firefox-example/plans/regular.yaml"}'
-    // fmt.Sprintf(`'{E"%v"}'`, strings.Join(job.TestsPlans, `",E"`)),
-    // strings.Replace(fmt.Sprintf(`'{E"%v"}'`, strings.Join(job.TestsPlans, `",E"`)), "/", "\/", -1),
     plansArr,
-    // strings.Replace(fmt.Sprintf(`'{E"%v"}'`, strings.Join(job.TestsPlans, `",E"`)), "/", `\/`, -1),
-		// pq.Array(job.TestsPlans),
-		// job.TestsPlans,
 		job.ImageUrl,
 		job.Reporter,
 		job.Status,

@@ -248,7 +248,11 @@ func CreateJobEntry(job JobRequest, uData UserData) JobEntry { // coverage-ignor
 	thisJob.TestsRepo = job.TestsRepo
 	thisJob.TestsRepoBranch = job.TestsRepoBranch
   // parsing here?
-	thisJob.TestsPlans = job.TestsPlans
+	// thisJob.TestsPlans = job.TestsPlans
+  thisJob.TestsPlans = make([]string, len(job.TestsPlans))
+  for idx, entry := range job.TestsPlans {
+    thisJob.TestsPlans[idx] = strings.Replace(entry, "/", `\/`, -1)
+  }
 	thisJob.ImageUrl = job.TestBed
 	thisJob.Reporter = job.Reporter
 	thisJob.Status = "pending"
