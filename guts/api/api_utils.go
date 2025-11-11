@@ -49,7 +49,7 @@ func InsertJobsRow(job JobEntry, driver database.DbDriver) error {
   tmpPlans := job.TestsPlans
   tmpPlans = make([]string, len(job.TestsPlans))
   for idx, entry := range job.TestsPlans {
-    tmpPlans[idx] = strings.Replace(entry, "/", `\/`, -1)
+    tmpPlans[idx] = strings.Replace(entry, "/", `\\/`, -1)
   }
   // plansArr := pq.Array(job.TestsPlans)
   plansArr := pq.Array(tmpPlans)
