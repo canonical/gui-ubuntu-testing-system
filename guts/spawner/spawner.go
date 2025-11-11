@@ -11,6 +11,7 @@ import (
 	"net/http"
 	"os"
 	"os/exec"
+  "os/signal"
   "log"
 	"slices"
 	"strings"
@@ -420,7 +421,7 @@ func SpawnerLoop(Driver database.DbDriver, SpawnerCfg GutsSpawnerConfig) error {
 
   go func() {
       <-c
-      syscall.Lill(vmProcess.Process.Pid, syscall.SIGKILL)
+      syscall.Kill(vmProcess.Process.Pid, syscall.SIGKILL)
       os.Exit(1)
   }()
 
