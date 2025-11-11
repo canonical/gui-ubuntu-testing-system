@@ -294,6 +294,7 @@ func UpdateCompleteJobs(Driver database.DbDriver) error {
 }
 
 func GetFailedRowIdsForState(Driver database.DbDriver, interval, state string) ([]string, error) {
+  log.Printf("getting failed row ids for state %v", state)
 	var ids []string
 
 	idQuery := fmt.Sprintf(`SELECT id FROM tests WHERE state='%s' AND updated_at < (now() - interval '%s')`, state, interval)
@@ -321,6 +322,8 @@ func GetFailedRowIdsForState(Driver database.DbDriver, interval, state string) (
 		return ids, err
 	}
 
+  log.Printf("got ids: %v", ids)
+
 	return ids, nil
 }
 
@@ -331,10 +334,12 @@ func BatchUpdateTestsWithRowIds(Driver database.DbDriver, field, value string, i
 }
 
 func FixFailedSpawns(Driver database.DbDriver, interval string) error {
+  log.Printf("getting failed row ids...")
 	ids, err := GetFailedRowIdsForState(Driver, interval, "spawning")
 	if err != nil { // coverage-ignore
 		return err
 	}
+  log.Printf("got row ids: %v", ids)
 	return BatchUpdateTestsWithRowIds(Driver, "state", "requested", ids)
 }
 
