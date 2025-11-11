@@ -159,6 +159,7 @@ func (p PgOperationInterface) InterfaceQuery(table, queryField, queryValue strin
 	}
 	defer utils.DeferredErrCheck(stmt.Close)
   log.Printf("Statement prepared")
+  log.Printf(stmt)
 	rows, err = stmt.Query(queryValue)
 	if err != nil { // coverage-ignore
 		return rows, err
