@@ -56,6 +56,7 @@ func JobEndpoint(c *gin.Context) { // coverage-ignore
 	}
 	job, err := GetCompleteResultsForUuid(uuid, Driver)
 	if err != nil {
+    log.Printf("error:\n%v", err.Error())
 		switch t := err.(type) {
 		default: // coverage-ignore
 			c.IndentedJSON(http.StatusInternalServerError, gin.H{"message": fmt.Sprintf("Internal server error of type %v:\n%v", t, err.Error())})
