@@ -58,14 +58,14 @@ func InsertJobsRow(job JobEntry, driver database.DbDriver) error {
   log.Printf(inputString)
   log.Printf("***********************************************************")
 
-  log.Printf("*************************\ntest plans:\n%v\n", plansArr)
+  // log.Printf("*************************\ntest plans:\n%v\n", plansArr)
 	_, err = stmt.Exec(
 		job.Uuid,
 		job.ArtifactUrl,
 		job.TestsRepo,
 		job.TestsRepoBranch,
     // plansArr,
-    inputString,
+    fmt.Sprintf(`'%v'`, inputString),
     // fmt.Sprintf(`'{%v}'`, inputString),
 		job.ImageUrl,
 		job.Reporter,
