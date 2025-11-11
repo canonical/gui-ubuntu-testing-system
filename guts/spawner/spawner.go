@@ -193,7 +193,7 @@ func AtomicDownloadImageToPath(imageUrl, imagePath string) error {
   log.Printf("writing to disk...")
   out, err := os.Create(newFile)
 
-  _, err := io.Copy(out, resp.Body)
+  _, err = io.Copy(out, resp.Body)
 	if err != nil { // coverage-ignore
 		return err
 	}
