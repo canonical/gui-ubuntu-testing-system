@@ -378,11 +378,13 @@ func SpawnerLoop(Driver database.DbDriver, SpawnerCfg GutsSpawnerConfig) error {
 	if err != nil {
 		return err
 	}
+  log.Printf("declaring finish states")
 	// declare the states the spawner considers finished
 	finishStates := []string{"pass", "fail", "requested"}
 	finished := false
 
 	// define how often we check the test state
+  log.Printf("defining heartbeat duration")
 	heartbeatDuration := time.Second * 5
 	// wait for either the qemu process to die or the test to finish
 	for !vmProcess.ProcessState.Exited() || finished {
