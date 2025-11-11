@@ -197,9 +197,13 @@ func (p PgOperationInterface) InterfaceRunRowUpdate(query string) error {
 
 func (p PgOperationInterface) UpdateUpdatedAt(id int) error {
 	ts := time.Now()
+  log.Printf("updating heartbeat timestamp with %v", ts)
+
 	updateCmd := `UPDATE tests SET updated_at=$1 WHERE id=$2`
+  log.Printf("running query: %v", updateCmd)
 	stmt, err := p.Db.Prepare(updateCmd)
 	if err != nil { // coverage-ignore
+    log.Printf(err.Error())
 		return err
 	}
 	defer utils.DeferredErrCheck(stmt.Close)
