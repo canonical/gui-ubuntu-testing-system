@@ -119,10 +119,14 @@ func DownloadImage(imageUrl string, SpawnerCfg GutsSpawnerConfig) (string, error
 	//      - if same, return image path, and continue without downloading
 	// - download image to .new, then move so it's atomic
 	// - return image path
+  log.Printf("downloading image at %v", imageUrl)
 	splitUrl := strings.Split(imageUrl, "/")
 	imageName := splitUrl[len(splitUrl)-1]
+  log.Printf("image name: %v", imageName)
 	imagePath := fmt.Sprintf("%v%v", SpawnerCfg.General.ImageCachePath, imageName)
+  log.Printf("image path: %v", imagePath)
 
+  log.Printf("checking if image already exists...")
 	err := utils.FileOrDirExists(imagePath)
 	if err == nil {
 		if IdenticalLocalAndRemoteShasum(imageUrl, imagePath) {
@@ -130,6 +134,7 @@ func DownloadImage(imageUrl string, SpawnerCfg GutsSpawnerConfig) (string, error
 		}
 	}
 
+  log.Printf("image doesn't exist, downloading...")
 	err = AtomicDownloadImageToPath(imageUrl, imagePath)
 	if err != nil { // coverage-ignore
 		return "", err
@@ -154,12 +159,14 @@ func IdenticalLocalAndRemoteShasum(imageUrl, imagePath string) bool {
 }
 
 func AtomicDownloadImageToPath(imageUrl, imagePath string) error {
+  log.Printf("preparing atomic image download...")
 	newFile := fmt.Sprintf("%v.new", imagePath)
 	resp, err := http.Get(imageUrl)
 	if err != nil { // coverage-ignore
 		return err
 	}
 	defer utils.DeferredErrCheck(resp.Body.Close)
+  log.Printf("image downloaded!")
 	b, err := io.ReadAll(resp.Body)
 	if err != nil { // coverage-ignore
 		return err
@@ -169,6 +176,7 @@ func AtomicDownloadImageToPath(imageUrl, imagePath string) error {
 		return err
 	}
 
+  log.Printf("creating parent directories if necessary...")
 	splitPath := strings.Split(imagePath, "/")
 	fileName := splitPath[len(splitPath)-1]
 	directoryNoFn := strings.Replace(imagePath, fileName, "", -1)
@@ -177,12 +185,17 @@ func AtomicDownloadImageToPath(imageUrl, imagePath string) error {
 		return err
 	}
 
+  log.Printf("writing to disk...")
 	err = os.WriteFile(newFile, b, 0644)
 	if err != nil { // coverage-ignore
 		return err
 	}
 	err = os.Rename(newFile, imagePath)
-	return err
+  if err != nil { // coverage-ignore
+    return err
+  }
+  log.Printf("image downloaded to %v", imagePath)
+	return nil
 }
 
 func GetQemuCmdLine(imagePath, DiskPath string, req TestRequirements, SpawnerCfg GutsSpawnerConfig) []string {
