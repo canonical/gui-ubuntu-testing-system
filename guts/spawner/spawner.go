@@ -130,7 +130,9 @@ func DownloadImage(imageUrl string, SpawnerCfg GutsSpawnerConfig) (string, error
   log.Printf("checking if image already exists...")
 	err := utils.FileOrDirExists(imagePath)
 	if err == nil {
+    log.Printf("checking local vs remote shasum...")
 		if IdenticalLocalAndRemoteShasum(imageUrl, imagePath) {
+      log.Printf("image already cached!")
 			return imagePath, nil
 		}
 	}
