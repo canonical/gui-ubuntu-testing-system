@@ -45,6 +45,8 @@ func InsertJobsRow(job JobEntry, driver database.DbDriver) error {
 		return err
 	}
 	defer utils.DeferredErrCheck(stmt.Close)
+  plansArr := strings.Replace(fmt.Sprintf(`'{E"%v"}'`, strings.Join(job.TestsPlans, `",E"`)), "/", `\/`, -1),
+  log.Printf("%v\n", plansArr)
 	_, err = stmt.Exec(
 		job.Uuid,
 		job.ArtifactUrl,
@@ -54,7 +56,8 @@ func InsertJobsRow(job JobEntry, driver database.DbDriver) error {
     // '{"tests/firefox-example/plans/regular.yaml"}'
     // fmt.Sprintf(`'{E"%v"}'`, strings.Join(job.TestsPlans, `",E"`)),
     // strings.Replace(fmt.Sprintf(`'{E"%v"}'`, strings.Join(job.TestsPlans, `",E"`)), "/", "\/", -1),
-    strings.Replace(fmt.Sprintf(`'{E"%v"}'`, strings.Join(job.TestsPlans, `",E"`)), "/", `\/`, -1),
+    plansArr,
+    // strings.Replace(fmt.Sprintf(`'{E"%v"}'`, strings.Join(job.TestsPlans, `",E"`)), "/", `\/`, -1),
 		// pq.Array(job.TestsPlans),
 		// job.TestsPlans,
 		job.ImageUrl,
