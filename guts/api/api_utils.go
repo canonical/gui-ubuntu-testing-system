@@ -54,7 +54,7 @@ func InsertJobsRow(job JobEntry, driver database.DbDriver) error {
   inputString := arrVal.(string)
   log.Printf("***********************************************************")
   // inputString = strings.Replace(inputString, `"`, "$", -1)
-  // inputString = strings.Replace(inputString, `/`, `\\/`, -1)
+  inputString = strings.Replace(inputString, `"`, `'`, -1)
   log.Printf(inputString)
   log.Printf("***********************************************************")
 
@@ -65,7 +65,8 @@ func InsertJobsRow(job JobEntry, driver database.DbDriver) error {
 		job.TestsRepo,
 		job.TestsRepoBranch,
     // plansArr,
-    fmt.Sprintf(`'%v'::string[]`, inputString),
+    // fmt.Sprintf(`'%v'::string[]`, inputString),
+    inputString,
     // fmt.Sprintf(`'{%v}'`, inputString),
 		job.ImageUrl,
 		job.Reporter,
