@@ -249,6 +249,7 @@ func GetRunningJobs(Driver database.DbDriver) ([]string, error) {
 	if err = rows.Err(); err != nil { // coverage-ignore
 		return uuids, err
 	}
+  log.Printf("got running jobs: %v", uuids)
 
 	return uuids, nil
 }
