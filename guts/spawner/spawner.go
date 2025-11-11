@@ -7,6 +7,7 @@ import (
 	"guts.ubuntu.com/v2/database"
 	"guts.ubuntu.com/v2/utils"
 	"io"
+  "syscall"
 	"net/http"
 	"os"
 	"os/exec"
@@ -413,6 +414,7 @@ func SpawnerLoop(Driver database.DbDriver, SpawnerCfg GutsSpawnerConfig) error {
   log.Printf("%v", vmProcess)
   log.Printf("%v", vmProcess.Process)
   log.Printf("%v", vmProcess.Process.Pid)
+  defer syscall.Kill(-cmd.Process.Pid, syscall.SIGKILL)
 	for PidActive(vmProcess.Process.Pid) || finished {
 		// get the test state
     log.Printf("getting test state...")
