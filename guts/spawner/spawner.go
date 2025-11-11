@@ -43,6 +43,7 @@ func FindHighestPrioUuid(Driver database.DbDriver) (string, error) {
 	)
   log.Printf("query complete")
 	if err != nil { // coverage-ignore
+    log.Printf(err.Error())
 		if err == sql.ErrNoRows {
 			return "", nil
 		} else {
