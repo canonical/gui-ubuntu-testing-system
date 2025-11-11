@@ -403,6 +403,7 @@ func SpawnerLoop(Driver database.DbDriver, SpawnerCfg GutsSpawnerConfig) error {
 	// wait for either the qemu process to die or the test to finish
   log.Printf("vm state:")
   log.Printf("%v", vmProcess)
+  log.Printf("%v", vmProcess.Process)
   log.Printf("%v", vmProcess.ProcessState)
   log.Printf("%v", vmProcess.ProcessState.Exited())
 	for !vmProcess.ProcessState.Exited() || finished {
