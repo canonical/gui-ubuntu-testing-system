@@ -2,9 +2,9 @@ package api
 
 import (
 	"fmt"
+	"github.com/lib/pq"
 	"guts.ubuntu.com/v2/database"
 	"guts.ubuntu.com/v2/utils"
-  "github.com/lib/pq"
 	"log"
 	"reflect"
 	"strings"
@@ -46,20 +46,21 @@ func InsertJobsRow(job JobEntry, driver database.DbDriver) error {
 	}
 	defer utils.DeferredErrCheck(stmt.Close)
 	_, err = stmt.Exec(
-    job.Uuid,
-    job.ArtifactUrl,
-    job.TestsRepo,
-    job.TestsRepoBranch,
-    pq.Array(job.TestsPlans),
-    job.ImageUrl,
-    job.Reporter,
-    job.Status,
-    job.SubmittedAt,
-    job.Requester,
-    job.Debug,
-    job.Priority,
+		job.Uuid,
+		job.ArtifactUrl,
+		job.TestsRepo,
+		job.TestsRepoBranch,
+		pq.Array(job.TestsPlans),
+		// job.TestsPlans,
+		job.ImageUrl,
+		job.Reporter,
+		job.Status,
+		job.SubmittedAt,
+		job.Requester,
+		job.Debug,
+		job.Priority,
 	)
-	if err != nil {
+	if err != nil { // coverage-ignore
 		log.Printf("failed to execute statement %v", stmt)
 	}
 	return err

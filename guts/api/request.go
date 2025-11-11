@@ -267,9 +267,11 @@ func WriteJobEntryToDb(job JobEntry, driver database.DbDriver) error {
 // We don't test this function because it's only used for unit tests
 func MakeDummyJobReq() JobRequest { // coverage-ignore
 	var expectedJobReq JobRequest
-	url := "myurl"
+  // url := "hello"
+  url := "http://launchpadlibrarian.net/645904366/hello_2.10-3_amd64.deb"
 	expectedJobReq.ArtifactUrl = &url
-	expectedJobReq.TestsRepo = "myrepo"
+	// expectedJobReq.TestsRepo = "myrepo"
+  expectedJobReq.TestsRepo = "https://github.com/canonical/ubuntu-gui-testing.git"
 	expectedJobReq.TestsRepoBranch = "main"
 	expectedJobReq.TestsPlans = []string{"plan1", "plan2"}
 	expectedJobReq.TestBed = "mytestbedurl"
