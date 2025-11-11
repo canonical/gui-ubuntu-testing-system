@@ -47,7 +47,7 @@ func InsertJobsRow(job JobEntry, driver database.DbDriver) error {
 	defer utils.DeferredErrCheck(stmt.Close)
 
   tmpPlans := job.TestsPlans
-  tmpPlans := make([]string, len(job.TestsPlans))
+  tmpPlans = make([]string, len(job.TestsPlans))
   for idx, entry := range job.TestsPlans {
     tmpPlans[idx] = strings.Replace(entry, "/", `\/`, -1)
   }
