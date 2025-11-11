@@ -47,31 +47,12 @@ func InsertJobsRow(job JobEntry, driver database.DbDriver) error {
 	}
 	defer utils.DeferredErrCheck(stmt.Close)
 
-  plansArr := pq.Array(job.TestsPlans)
-  // plansArr := fmt.Sprintf(`'\{\"%v\"\}'`, strings.Join(job.TestsPlans, `\",\"`))
-  // plansArr := fmt.Sprintf(`ARRAY ['%v']`, strings.Join(job.TestsPlans, `','`))
-  arrVal, _ := plansArr.Value()
-  inputString := arrVal.(string)
-  log.Printf("***********************************************************")
-  // inputString = strings.Replace(inputString, `"`, "$", -1)
-  inputString = strings.Replace(inputString, `/`, `%2F`, -1)
-  log.Printf(inputString)
-  log.Printf("***********************************************************")
-  // log.Printf(pq.Array([]string{"asdf"}))
-
-  // log.Printf("*************************\ntest plans:\n%v\n", plansArr)
 	_, err = stmt.Exec(
 		job.Uuid,
 		job.ArtifactUrl,
 		job.TestsRepo,
 		job.TestsRepoBranch,
-    // plansArr,
-    // fmt.Sprintf(`'%v'::string[]`, inputString),
-    plansArr,
-    // inputString,
-    // pq.Array([]string{"asdf"}),
-    // inputString,
-    // fmt.Sprintf(`'{%v}'`, inputString),
+    pq.Array(job.TestsPlans),
 		job.ImageUrl,
 		job.Reporter,
 		job.Status,
