@@ -247,6 +247,7 @@ func CreateJobEntry(job JobRequest, uData UserData) JobEntry { // coverage-ignor
 	thisJob.ArtifactUrl = job.ArtifactUrl
 	thisJob.TestsRepo = job.TestsRepo
 	thisJob.TestsRepoBranch = job.TestsRepoBranch
+  // parsing here?
 	thisJob.TestsPlans = job.TestsPlans
 	thisJob.ImageUrl = job.TestBed
 	thisJob.Reporter = job.Reporter
