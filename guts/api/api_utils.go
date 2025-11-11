@@ -53,7 +53,8 @@ func InsertJobsRow(job JobEntry, driver database.DbDriver) error {
     // string interpolation, replace `/` with `\/` ?
     // '{"tests/firefox-example/plans/regular.yaml"}'
     // fmt.Sprintf(`'{E"%v"}'`, strings.Join(job.TestsPlans, `",E"`)),
-    strings.Replace(fmt.Sprintf(`'{E"%v"}'`, strings.Join(job.TestsPlans, `",E"`)), "/", "\/", -1),
+    // strings.Replace(fmt.Sprintf(`'{E"%v"}'`, strings.Join(job.TestsPlans, `",E"`)), "/", "\/", -1),
+    strings.Replace(fmt.Sprintf(`'{E"%v"}'`, strings.Join(job.TestsPlans, `",E"`)), "/", `\/`, -1),
 		// pq.Array(job.TestsPlans),
 		// job.TestsPlans,
 		job.ImageUrl,
