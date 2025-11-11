@@ -263,6 +263,9 @@ func UpdateCompleteJobs(Driver database.DbDriver) error {
 		return err
 	}
 
+  if len(runningUuids) < 1 {
+    return nil
+  }
 	log.Printf("checking if any of the following jobs have finished running yet:\n%v", runningUuids)
 
 	// check results of accompanying tests
