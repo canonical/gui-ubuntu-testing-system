@@ -225,6 +225,7 @@ func HandleNewJobRequests(Driver database.DbDriver) error {
 }
 
 func GetRunningJobs(Driver database.DbDriver) ([]string, error) {
+  /////////////////////////////
 	var uuids []string
 
 	rows, err := Driver.Query("jobs", "status", "running", []string{"uuid"})

@@ -148,6 +148,8 @@ func (p PgOperationInterface) InterfaceQueryRow(table, queryField, queryValue st
 }
 
 func (p PgOperationInterface) InterfaceQuery(table, queryField, queryValue string, fields []string) (*sql.Rows, error) { // coverage-ignore
+  //////////
+  // What happening?
 	var rows *sql.Rows
 	queryString := fmt.Sprintf("SELECT %v FROM %v WHERE %v=$1", strings.Join(fields, ", "), table, queryField)
 	log.Printf("running query %v with query parameter %v\n", queryString, queryValue)
@@ -156,6 +158,7 @@ func (p PgOperationInterface) InterfaceQuery(table, queryField, queryValue strin
 		return rows, err
 	}
 	defer utils.DeferredErrCheck(stmt.Close)
+  log.Printf("Statement prepared")
 	rows, err = stmt.Query(queryValue)
 	if err != nil { // coverage-ignore
 		return rows, err
