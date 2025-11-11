@@ -329,6 +329,7 @@ func GetFailedRowIdsForState(Driver database.DbDriver, interval, state string) (
 
 func BatchUpdateTestsWithRowIds(Driver database.DbDriver, field, value string, ids []string) error {
 	query := fmt.Sprintf(`UPDATE tests SET %s='%s' WHERE id IN (%s)`, field, value, strings.Join(ids, ", "))
+  log.Printf("running query: %v", query)
 	err := Driver.UpdateRow(query)
 	return err
 }
