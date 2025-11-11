@@ -340,6 +340,10 @@ func FixFailedSpawns(Driver database.DbDriver, interval string) error {
 	if err != nil { // coverage-ignore
 		return err
 	}
+  if len(ids) == 0 {
+    log.Printf("no ids to update")
+    return nil
+  }
   log.Printf("got row ids: %v", ids)
 	return BatchUpdateTestsWithRowIds(Driver, "state", "requested", ids)
 }
@@ -349,6 +353,10 @@ func FixFailedRuns(Driver database.DbDriver, interval string) error {
 	if err != nil { // coverage-ignore
 		return err
 	}
+  if len(ids) == 0 {
+    log.Printf("no ids to update")
+    return nil
+  }
 	return BatchUpdateTestsWithRowIds(Driver, "state", "requested", ids)
 }
 
