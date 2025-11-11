@@ -2,7 +2,7 @@ package api
 
 import (
 	"fmt"
-	// "github.com/lib/pq"
+	"github.com/lib/pq"
 	"guts.ubuntu.com/v2/database"
 	"guts.ubuntu.com/v2/utils"
 	"log"
@@ -46,8 +46,10 @@ func InsertJobsRow(job JobEntry, driver database.DbDriver) error {
 	}
 	defer utils.DeferredErrCheck(stmt.Close)
   // plansArr := strings.Replace(fmt.Sprintf(`'{E"%v"}'`, strings.Join(job.TestsPlans, `",E"`)), "/", `\/`, -1),
-  plansArr := fmt.Sprintf(`'{E'%v'}'`, strings.Join(job.TestsPlans, `",E"`))
-  plansArr = strings.Replace(plansArr, "/", `\/`, -1)
+  // plansArr := fmt.Sprintf(`'{E'%v'}'`, strings.Join(job.TestsPlans, `",E"`))
+  // plansArr = strings.Replace(plansArr, "/", `\/`, -1)
+
+  plansArr := pq.Array(job.TestsPlans)
 
   log.Printf("%v\n", plansArr)
 	_, err = stmt.Exec(
