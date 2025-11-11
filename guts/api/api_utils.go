@@ -2,7 +2,7 @@ package api
 
 import (
 	"fmt"
-	"github.com/lib/pq"
+	// "github.com/lib/pq"
 	"guts.ubuntu.com/v2/database"
 	"guts.ubuntu.com/v2/utils"
 	"log"
