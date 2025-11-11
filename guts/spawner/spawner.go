@@ -159,7 +159,7 @@ func IdenticalLocalAndRemoteShasum(imageUrl, imagePath string) bool {
 }
 
 func AtomicDownloadImageToPath(imageUrl, imagePath string) error {
-  log.Printf("preparing atomic image download...")
+  log.Printf("preparing atomic image download from url %v...", imageUrl)
 	newFile := fmt.Sprintf("%v.new", imagePath)
 	resp, err := http.Get(imageUrl)
 	if err != nil { // coverage-ignore
