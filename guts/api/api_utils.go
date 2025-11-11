@@ -51,8 +51,9 @@ func InsertJobsRow(job JobEntry, driver database.DbDriver) error {
   // plansArr := fmt.Sprintf(`'\{\"%v\"\}'`, strings.Join(job.TestsPlans, `\",\"`))
   // plansArr := fmt.Sprintf(`ARRAY ['%v']`, strings.Join(job.TestsPlans, `','`))
   arrVal, _ := plansArr.Value()
+  inputString = arrVal
   log.Printf("***********************************************************")
-  log.Printf(arrVal.(string))
+  log.Printf(inputString)
   log.Printf("***********************************************************")
 
   log.Printf("*************************\ntest plans:\n%v\n", plansArr)
@@ -61,7 +62,8 @@ func InsertJobsRow(job JobEntry, driver database.DbDriver) error {
 		job.ArtifactUrl,
 		job.TestsRepo,
 		job.TestsRepoBranch,
-    plansArr,
+    // plansArr,
+    inputString,
 		job.ImageUrl,
 		job.Reporter,
 		job.Status,
