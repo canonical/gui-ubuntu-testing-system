@@ -420,7 +420,7 @@ func SchedulerLoop(Driver database.DbDriver, SchedulerCfg GutsSchedulerConfig) e
   log.Printf("*********************************")
   log.Printf("running db and storage cleanup...")
 	// Scheduler step 5: Remove old objects and db entries
-	retentionDuration, err := time.ParseDuration(fmt.Sprintf("%vd", SchedulerCfg.ArtifactRetentionDays))
+	retentionDuration, err := time.ParseDuration(fmt.Sprintf("%vh", SchedulerCfg.ArtifactRetentionDays * 24))
 	if err != nil {
 		return err
 	}
