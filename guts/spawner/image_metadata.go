@@ -20,13 +20,28 @@ func GetLocalShaSum(pathToFile string) (string, error) {
     log.Printf("%v doesn't exist!", pathToFile)
 		return "", err
 	}
-	dat, err := os.ReadFile(pathToFile)
-	if err != nil { // coverage-ignore
-		return "", err
-	}
-	h := sha256.New()
-	h.Write(dat)
-	return hex.EncodeToString(h.Sum(nil)), nil
+  log.Printf("%v exists!")
+
+  f, err := os.Open(pathToFile)
+  if err != nil {
+    return "", err
+  }
+  defer utils.DeferredErrCheck(f.Close)
+
+  h := sha256.New()
+  if _, err := io.Copy(h, f); err != nil {
+    return "", err
+  }
+  return hex.EncodeToString(h.Sum(nil))
+
+
+	// dat, err := os.ReadFile(pathToFile)
+	// if err != nil { // coverage-ignore
+	// 	return "", err
+	// }
+	// h := sha256.New()
+	// h.Write(dat)
+	// return hex.EncodeToString(h.Sum(nil)), nil
 }
 
 func GetRemoteShaSum(imageUrl string) (string, error) {
