@@ -14,8 +14,10 @@ import (
 )
 
 func GetLocalShaSum(pathToFile string) (string, error) {
+  log.Printf("getting shasum of %v"m pathToFile)
 	err := utils.FileOrDirExists(pathToFile)
 	if err != nil {
+    log.Printf("%v doesn't exist!", pathToFile)
 		return "", err
 	}
 	dat, err := os.ReadFile(pathToFile)
