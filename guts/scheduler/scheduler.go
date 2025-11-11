@@ -228,6 +228,8 @@ func GetRunningJobs(Driver database.DbDriver) ([]string, error) {
   /////////////////////////////
 	var uuids []string
 
+  log.Printf("getting running jobs")
+
 	rows, err := Driver.Query("jobs", "status", "running", []string{"uuid"})
 	if err != nil { // coverage-ignore
 		return uuids, err
@@ -239,6 +241,7 @@ func GetRunningJobs(Driver database.DbDriver) ([]string, error) {
 		if err != nil { // coverage-ignore
 			return uuids, err
 		}
+    log.Printf("found job: %v", thisUuid)
 		uuids = append(uuids, thisUuid)
 	}
 
