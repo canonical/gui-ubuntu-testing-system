@@ -224,7 +224,7 @@ func AtomicDownloadImageToPath(imageUrl, imagePath string) error {
 
 func GetQemuCmdLine(imagePath, DiskPath string, req TestRequirements, SpawnerCfg GutsSpawnerConfig) []string {
 	executable := "qemu-system-x86_64"
-	defaultFlags := fmt.Sprintf("-m %v -smp %v -enable-kvm -machine pc,accel=kvm -usbdevice tablet -vga virtio -vnc :%v,share=ignore", SpawnerCfg.Virtualisation.Memory, SpawnerCfg.Virtualisation.Cores, VncPort)
+	defaultFlags := fmt.Sprintf("-m %v -smp %v -enable-kvm -machine pc,accel=kvm -usbdevice tablet -vga virtio -vnc :%v,share=ignore", SpawnerCfg.Virtualisation.Memory, SpawnerCfg.Virtualisation.Cores, VncPort - 5900)
 	var imageArgs string
 	if req.liveImage {
 		imageArgs = fmt.Sprintf("-boot once=d -cdrom %v -hda %v", imagePath, DiskPath)
