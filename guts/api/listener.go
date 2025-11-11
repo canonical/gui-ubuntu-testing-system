@@ -50,6 +50,7 @@ func JobEndpoint(c *gin.Context) { // coverage-ignore
 	_, Driver, _, err := Setup()
 	utils.CheckError(err)
 	uuid := c.Param("uuid")
+  log.Printf("finding uuid: %v", uuid)
 	err = utils.ValidateUuid(uuid)
 	if err != nil {
 		c.IndentedJSON(http.StatusBadRequest, gin.H{"message": err.Error()})
