@@ -410,6 +410,9 @@ func SpawnerLoop(Driver database.DbDriver, SpawnerCfg GutsSpawnerConfig) error {
   }()
 
   defer syscall.Kill(vmProcess.Process.Pid, syscall.SIGKILL)
+
+  go vmProcess.Wait()
+
 	for utils.PidActive(vmProcess.Process.Pid) || finished {
 		// get the test state
     log.Printf("getting test state...")
