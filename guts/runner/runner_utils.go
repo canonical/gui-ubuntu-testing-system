@@ -292,7 +292,7 @@ func RunnerLoop(Driver database.DbDriver, RunnerCfg GutsRunnerConfig) error { //
 
 	envVars := []string{
 		fmt.Sprintf("VNC_HOST=%v", host),
-		fmt.Sprintf("VNC_PORT=%v", string(portInt)),
+		fmt.Sprintf("VNC_PORT=%v", strconv.Itoa(portInt)),
 	}
   log.Printf("running yarf with the following env vars:\n%v", envVars)
 	yarfProcess, err := utils.StartProcess(yarfCmdLine, &envVars)
