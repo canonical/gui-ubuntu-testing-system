@@ -74,10 +74,16 @@ func DeferredErrCheckStringArg(f func(s string) error, s string) { // coverage-i
 }
 
 func PidActive(pid int) bool { // coverage-ignore
-  _, err := os.FindProcess(pid)
+  p, err := os.FindProcess(pid)
   log.Printf("checking status of pid %v", pid)
   if err != nil {
     log.Printf(err.Error())
+    return false
+  }
+  // process exists, need to check if it is active
+  err = p.Signal(syscall.Signal(0))
+  if err != nil {
+    log.Printf("looks like process is dead!")
     return false
   }
   return true

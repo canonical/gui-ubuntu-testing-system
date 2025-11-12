@@ -262,14 +262,10 @@ func SpawnVm(cmdLine []string) (*exec.Cmd, error) { // coverage-ignore
   log.Println(qemuVmCreateCmd)
 	err := qemuVmCreateCmd.Start()
   if err != nil {
-    log.Printf("^^^^^^^^^^^^^^^^^^^^^^^^^^^^")
     log.Printf(err.Error())
-    log.Printf("^^^^^^^^^^^^^^^^^^^^^^^^^^^^")
     panic(err)
   }
-  log.Println("********************************")
   log.Println(qemuVmCreateCmd)
-  log.Println("********************************")
 	return qemuVmCreateCmd, err
 }
 
