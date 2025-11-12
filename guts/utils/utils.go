@@ -369,10 +369,11 @@ func StartProcess(processArgs []string, envVars *[]string) (*exec.Cmd, error) {
 	}
   log.Printf("running command:\n%v", cmd)
 	// err := cmd.Start()
-	err := cmd.CombinedOutput()
+	out, err := cmd.CombinedOutput()
   if err != nil {
     log.Printf(err.Error())
   }
+  log.Printf(out)
 	return cmd, err
 }
 
