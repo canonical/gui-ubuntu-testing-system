@@ -235,35 +235,44 @@ func RunnerLoop(Driver database.DbDriver, RunnerCfg GutsRunnerConfig) error { //
 
   log.Printf("found row with row id %v and uuid %v ready for test run", rowId, Uuid)
 
+  log.Printf("setting test state to running...")
 	// - set state to `running`
 	err = Driver.SetTestStateTo(rowId, "running")
 	if err != nil {
 		return err
 	}
 
+  log.Printf("cloning tests repo...")
 	// - clone the tests repo
 	GitData, err := CloneTestsData(rowId, Driver)
 	if err != nil {
 		return err
 	}
+  log.Printf("got git data:\n%v", GitData)
 
 	// - update the `commit_hash` column
 	err = SetCommitHashForTest(rowId, GitData.CommitHash, Driver)
 	if err != nil {
 		return err
 	}
+  log.Printf("commit hash set in tests table")
 
+  log.Printf("creating artifacts directory")
 	// create temp dir for artifacts
 	artifactDirName, err := os.MkdirTemp("", "artifacts")
 	if err != nil {
 		return err
 	}
 
+  log.Printf("will write artifacts to %v", artifactDirName)
+
+  log.Printf("getting yarf command line...")
 	// create yarf command line
 	yarfCmdLine, err := GetYarfCommandLine(GitData, rowId, artifactDirName, Driver)
 	if err != nil {
 		return err
 	}
+  log.Printf("got yarf command line:\n%v", yarfCmdLine)
 
 	host, port, err := GetHostAndPort(rowId, Driver)
 	if err != nil {
@@ -274,6 +283,7 @@ func RunnerLoop(Driver database.DbDriver, RunnerCfg GutsRunnerConfig) error { //
 		fmt.Sprintf("VNC_HOST=%v", host),
 		fmt.Sprintf("VNC_PORT=%v", port),
 	}
+  log.Printf("running yarf with the following env vars:\n%v", envVars)
 	yarfProcess, err := utils.StartProcess(yarfCmdLine, &envVars)
 	if err != nil {
 		return err
@@ -301,16 +311,22 @@ func RunnerLoop(Driver database.DbDriver, RunnerCfg GutsRunnerConfig) error { //
 		time.Sleep(heartbeatDuration)
 	}
 
+  log.Printf("test complete!")
+
 	// Test must have now completed.
 	exitCode := yarfProcess.ProcessState.ExitCode()
+  log.Printf("exit code: %v", exitCode)
 	if exitCode == yarfTempFailCode {
+    log.Printf("yarf temp failed!")
 		// this means that the test run was a tempfail
 		// here, unset the vnc_address and set the state back to requested
 		// doing this means the test will be retried
+    log.Printf("un-assigning vnc address")
 		err = RemoveVncAddress(rowId, Driver)
 		if err != nil {
 			return err
 		}
+    log.Printf("setting state back to requested")
 		err = Driver.SetTestStateTo(rowId, "requested")
 		if err != nil {
 			return err
@@ -318,6 +334,7 @@ func RunnerLoop(Driver database.DbDriver, RunnerCfg GutsRunnerConfig) error { //
 		return nil
 	}
 
+  log.Printf("tar-ing up %v", artifactDirName)
 	// Bundle up test artifacts and result - which is artifactDirName
 	tarBytes, err := utils.TarUpDirectory(artifactDirName)
 	if err != nil {
@@ -325,17 +342,21 @@ func RunnerLoop(Driver database.DbDriver, RunnerCfg GutsRunnerConfig) error { //
 	}
 
 	// gzip the tarBytes
+  log.Printf("gzip-ing the tar archive")
 	gzippedTarBytes, err := utils.GzipTarArchiveBytes(tarBytes)
 	if err != nil {
 		return err
 	}
 
+  log.Printf("uploading tar archive to storage")
 	// upload the test artifacts to the storage backend
 	storageUrl, err := backend.Upload(Uuid, fmt.Sprintf("%v-%v.tar.gz", Uuid, rowId), gzippedTarBytes)
 	if err != nil {
 		return err
 	}
+  log.Printf("storage url: %v", storageUrl)
 
+  log.Printf("setting test results url")
 	// write artifact_url to tests table
 	err = SetResultsUrlForTest(rowId, storageUrl, Driver)
 	if err != nil {
@@ -348,6 +369,7 @@ func RunnerLoop(Driver database.DbDriver, RunnerCfg GutsRunnerConfig) error { //
 		finalState = "fail"
 	}
 
+  log.Printf("setting final test state to %v", finalState)
 	// update test state
 	err = Driver.SetTestStateTo(rowId, finalState)
 	if err != nil {
