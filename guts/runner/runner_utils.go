@@ -170,16 +170,23 @@ func GetYarfCommandLine(TestData TestGitData, rowId int, artifactsDir string, Dr
 		return cmdLine, fmt.Errorf("couldn't parse test entrypoint for test %v and plan %v", testCase, testPlan)
 	}
 
-	cmdLine = []string{
-		"yarf",
-		"--platform=Vnc",
-    fmt.Sprintf("%v/%v", TestData.RepoDir, entrypoint),
-		"--outdir",
-		artifactsDir,
-		"--",
-		"--suite",
-    testCase,
-	}
+  // actual command line
+	// cmdLine = []string{
+	// 	"yarf",
+	// 	"--platform=Vnc",
+  //   fmt.Sprintf("%v/%v", TestData.RepoDir, entrypoint),
+	// 	"--outdir",
+	// 	artifactsDir,
+	// 	"--",
+	// 	"--suite",
+  //   testCase,
+	// }
+
+  cmdLine = []string{
+    "yarf",
+    "-h",
+  }
+
 	return cmdLine, nil
 }
 
@@ -289,8 +296,8 @@ func RunnerLoop(Driver database.DbDriver, RunnerCfg GutsRunnerConfig) error { //
 		return err
 	}
 
-  // err = yarfProcess.Wait()
-  // utils.CheckError(err)
+  err = yarfProcess.Wait()
+  utils.CheckError(err)
 
 	yarfTempFailCode := 999
 	heartbeatDuration := time.Second * 5
