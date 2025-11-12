@@ -31,7 +31,7 @@ func main() { // coverage-ignore
 		utils.CheckError(err)
     log.Printf("runner loop complete...")
 		// wait somewhere between 30 and 90 seconds before checking for new jobs
-		pollSleepDuration := time.Second * time.Duration(rand.IntN(60)+30)
+		pollSleepDuration := time.Second * time.Duration(rand.IntN(10)+5)
     log.Printf("sleeping for %v seconds...", pollSleepDuration)
 		time.Sleep(pollSleepDuration)
 	}
