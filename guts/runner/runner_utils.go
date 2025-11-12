@@ -228,6 +228,11 @@ func RunnerLoop(Driver database.DbDriver, RunnerCfg GutsRunnerConfig) error { //
 		return err
 	}
 
+  if rowId == 0 && Uuid == "" {
+    log.Printf("no jobs ready for a test run")
+    return nil
+  }
+
   log.Printf("found row with row id %v and uuid %v ready for test run", rowId, Uuid)
 
 	// - set state to `running`
