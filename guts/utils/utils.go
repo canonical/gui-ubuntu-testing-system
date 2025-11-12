@@ -360,7 +360,9 @@ func StartProcess(processArgs []string, envVars *[]string) (*exec.Cmd, error) {
 			cmd.Env = append(cmd.Env, entry)
 		}
 	}
+  log.Printf("running command:\n%v", cmd)
 	err := cmd.Start()
+  log.Printf(err)
 	return cmd, err
 }
 
