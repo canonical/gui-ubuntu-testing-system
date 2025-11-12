@@ -81,9 +81,9 @@ func PidActive(pid int) bool { // coverage-ignore
     log.Printf(err.Error())
     return false
   }
+  log.Printf("found process: %v", p)
   // process exists, need to check if it is active
   err = p.Signal(syscall.Signal(0))
-  fmt.Println(err.Error())
   if err != nil {
     log.Printf("========================================")
     log.Printf("looks like process is dead!")
