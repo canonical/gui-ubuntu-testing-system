@@ -289,8 +289,8 @@ func RunnerLoop(Driver database.DbDriver, RunnerCfg GutsRunnerConfig) error { //
 		return err
 	}
 
-  err = yarfProcess.Wait()
-  utils.CheckError(err)
+  // err = yarfProcess.Wait()
+  // utils.CheckError(err)
 
 	yarfTempFailCode := 999
 	heartbeatDuration := time.Second * 5
