@@ -7,11 +7,14 @@ import (
 	"guts.ubuntu.com/v2/database"
 	"guts.ubuntu.com/v2/utils"
 	"io"
+	"log"
 	"net/http"
 	"os"
 	"os/exec"
+	"os/signal"
 	"slices"
 	"strings"
+	"syscall"
 	"time"
 )
 
@@ -32,6 +35,7 @@ func CreateCacheIfNotExists(SpawnerCfg GutsSpawnerConfig) error {
 func FindHighestPrioUuid(Driver database.DbDriver) (string, error) {
 	var uuid string
 	jobQuery := `SELECT tests.uuid FROM tests JOIN jobs ON jobs.uuid=tests.uuid WHERE state='requested' ORDER BY priority DESC LIMIT 1`
+	log.Printf("running query: %v", jobQuery)
 	row, err := Driver.RunQueryRow(jobQuery)
 	if err != nil { // coverage-ignore
 		return uuid, err
@@ -39,8 +43,11 @@ func FindHighestPrioUuid(Driver database.DbDriver) (string, error) {
 	err = row.Scan(
 		&uuid,
 	)
+	log.Printf("query complete")
 	if err != nil { // coverage-ignore
+		log.Printf(err.Error())
 		if err == sql.ErrNoRows {
+			log.Printf("found no uuids")
 			return "", nil
 		} else {
 			return "", err
@@ -115,34 +122,47 @@ func DownloadImage(imageUrl string, SpawnerCfg GutsSpawnerConfig) (string, error
 	//      - if same, return image path, and continue without downloading
 	// - download image to .new, then move so it's atomic
 	// - return image path
+	log.Printf("downloading image at %v", imageUrl)
 	splitUrl := strings.Split(imageUrl, "/")
 	imageName := splitUrl[len(splitUrl)-1]
+	log.Printf("image name: %v", imageName)
 	imagePath := fmt.Sprintf("%v%v", SpawnerCfg.General.ImageCachePath, imageName)
+	log.Printf("image path: %v", imagePath)
 
+	log.Printf("checking if image already exists...")
 	err := utils.FileOrDirExists(imagePath)
 	if err == nil {
 		if IdenticalLocalAndRemoteShasum(imageUrl, imagePath) {
+			log.Printf("image already cached!")
 			return imagePath, nil
 		}
 	}
 
+	log.Printf("image doesn't exist, downloading...")
 	err = AtomicDownloadImageToPath(imageUrl, imagePath)
 	if err != nil { // coverage-ignore
+		log.Printf(err.Error())
 		return "", err
 	}
+
+	log.Printf("%v downloaded to %v", imageName, imagePath)
 
 	return imagePath, nil
 }
 
 func IdenticalLocalAndRemoteShasum(imageUrl, imagePath string) bool {
+	log.Printf("checking local vs remote shasum...")
 	remoteShasum, err := GetRemoteShaSum(imageUrl)
 	if err != nil {
+		log.Printf(err.Error())
 		return false
 	}
+	log.Printf("remote shasum: %v", remoteShasum)
 	localShasum, err := GetLocalShaSum(imagePath)
 	if err != nil {
 		return false
 	}
+	log.Printf("local sha sum: %v", localShasum)
 	if localShasum == remoteShasum {
 		return true
 	}
@@ -150,21 +170,26 @@ func IdenticalLocalAndRemoteShasum(imageUrl, imagePath string) bool {
 }
 
 func AtomicDownloadImageToPath(imageUrl, imagePath string) error {
+	log.Printf("preparing atomic image download from url %v...", imageUrl)
 	newFile := fmt.Sprintf("%v.new", imagePath)
 	resp, err := http.Get(imageUrl)
 	if err != nil { // coverage-ignore
 		return err
 	}
 	defer utils.DeferredErrCheck(resp.Body.Close)
-	b, err := io.ReadAll(resp.Body)
-	if err != nil { // coverage-ignore
-		return err
-	}
-	err = resp.Body.Close()
-	if err != nil { // coverage-ignore
-		return err
-	}
+	// log.Printf("image downloaded!")
+	// b, err := io.ReadAll(resp.Body)
+	// if err != nil { // coverage-ignore
+	//   log.Printf(err.Error())
+	// 	return err
+	// }
+	// err = resp.Body.Close()
+	// if err != nil { // coverage-ignore
+	//   log.Printf(err.Error())
+	// 	return err
+	// }
 
+	log.Printf("creating parent directories if necessary...")
 	splitPath := strings.Split(imagePath, "/")
 	fileName := splitPath[len(splitPath)-1]
 	directoryNoFn := strings.Replace(imagePath, fileName, "", -1)
@@ -173,17 +198,35 @@ func AtomicDownloadImageToPath(imageUrl, imagePath string) error {
 		return err
 	}
 
-	err = os.WriteFile(newFile, b, 0644)
+	log.Printf("writing to disk...")
+	out, err := os.Create(newFile)
+
+	_, err = io.Copy(out, resp.Body)
 	if err != nil { // coverage-ignore
 		return err
 	}
+
+	err = out.Close()
+	if err != nil { // coverage-ignore
+		return err
+	}
+
+	// err = os.WriteFile(newFile, b, 0644)
+	// if err != nil { // coverage-ignore
+	// 	return err
+	// }
+
 	err = os.Rename(newFile, imagePath)
-	return err
+	if err != nil { // coverage-ignore
+		return err
+	}
+	log.Printf("image downloaded to %v", imagePath)
+	return nil
 }
 
 func GetQemuCmdLine(imagePath, DiskPath string, req TestRequirements, SpawnerCfg GutsSpawnerConfig) []string {
 	executable := "qemu-system-x86_64"
-	defaultFlags := fmt.Sprintf("-m %v -smp %v -enable-kvm -machine pc,accel=kvm -usbdevice tablet -vga virtio -vnc :%v,share=ignore", SpawnerCfg.Virtualisation.Memory, SpawnerCfg.Virtualisation.Cores, VncPort)
+	defaultFlags := fmt.Sprintf("-m %v -smp %v -enable-kvm -machine pc,accel=kvm -usbdevice tablet -vga virtio -vnc :%v,share=ignore", SpawnerCfg.Virtualisation.Memory, SpawnerCfg.Virtualisation.Cores, VncPort-5900)
 	var imageArgs string
 	if req.liveImage {
 		imageArgs = fmt.Sprintf("-boot once=d -cdrom %v -hda %v", imagePath, DiskPath)
@@ -213,9 +256,16 @@ func CreateQcowDisk(requirements TestRequirements, Uuid string, SpawnerCfg GutsS
 }
 
 func SpawnVm(cmdLine []string) (*exec.Cmd, error) { // coverage-ignore
-	qemuVmCreateCmd := exec.Command("")
+	log.Printf("command line:\n%v", cmdLine)
+	qemuVmCreateCmd := exec.Command(cmdLine[0])
 	qemuVmCreateCmd.Args = cmdLine
+	log.Println(qemuVmCreateCmd)
 	err := qemuVmCreateCmd.Start()
+	if err != nil {
+		log.Printf(err.Error())
+		panic(err)
+	}
+	log.Println(qemuVmCreateCmd)
 	return qemuVmCreateCmd, err
 }
 
@@ -236,7 +286,9 @@ func GetTestState(id int, Driver database.DbDriver) (string, error) {
 }
 
 func SpawnerLoop(Driver database.DbDriver, SpawnerCfg GutsSpawnerConfig) error { // coverage-ignore
+	log.Printf("starting spawner loop...")
 	// Find the requested job with the highest priority
+	log.Printf("finding highest prio uuid...")
 	uuid, err := FindHighestPrioUuid(Driver)
 	// Perform a standard error check
 	if err != nil {
@@ -246,46 +298,59 @@ func SpawnerLoop(Driver database.DbDriver, SpawnerCfg GutsSpawnerConfig) error {
 	if uuid == "" {
 		return nil
 	}
+	log.Printf("found uuid: %v", uuid)
 	// Get the id of the individual test
+	log.Printf("finding row ids for %v in state 'requested'", uuid)
 	id, err := FindRowIdForUuidInStateRequested(uuid, Driver)
 	if err != nil {
 		return err
 	}
+	log.Printf("found id: %v", id)
 	// Set the test state to spawning to indicate we are spawning the VM
+	log.Printf("setting state to 'spawning'")
 	err = Driver.SetTestStateTo(id, "spawning")
 	if err != nil {
 		return err
 	}
+	log.Printf("updating heartbeat timestamp")
 	// Update the heartbeat timestamp
 	err = database.UpdateUpdatedAt(id, Driver)
 	if err != nil {
 		return err
 	}
 	// Set the vncaddress field to state where the test is running
+	log.Printf("setting vnc address")
 	err = SetVncAddressForId(id, Driver)
 	if err != nil {
 		return err
 	}
 	// Update the heartbeat timestamp
+	log.Printf("updating heartbeat timestamp")
 	err = database.UpdateUpdatedAt(id, Driver)
 	if err != nil {
 		return err
 	}
 	// Get the url for the image for the test
+	log.Printf("getting image url")
 	imageUrl, err := GetImageUrl(id, Driver)
 	if err != nil {
 		return err
 	}
+	log.Printf("got url: %v", imageUrl)
 	// Parse test requirements from the db
+	log.Printf("getting test requirements...")
 	requirements, err := GetTestRequirements(id, imageUrl, Driver)
 	if err != nil {
 		return err
 	}
+	log.Printf("got requirements: %v", requirements)
 	// Download the image to a local path
+	log.Printf("downloading image...")
 	imagePath, err := DownloadImage(imageUrl, SpawnerCfg)
 	if err != nil {
 		return err
 	}
+	log.Printf("image downloaded to: %v", imagePath)
 	// the diskpath and image path are the same if an image is pre-installed
 	// otherwise they differ
 	DiskPath := imagePath
@@ -300,42 +365,72 @@ func SpawnerLoop(Driver database.DbDriver, SpawnerCfg GutsSpawnerConfig) error {
 	// Get the appropriate qemu command line given the test requirements
 	qemuCmdLine := GetQemuCmdLine(imagePath, DiskPath, requirements, SpawnerCfg)
 
+	log.Printf("got qemu cmd line: %v", qemuCmdLine)
+
 	// spawn the qemu VM
+	log.Printf("spawning VM...")
 	vmProcess, err := SpawnVm(qemuCmdLine)
 	if err != nil {
 		return err
 	}
+	log.Println("=========================")
+	log.Println("vm process:")
+	log.Println(vmProcess)
+	log.Println("=========================")
 	// set state to spawned
+	log.Printf("setting state to 'spawned'...")
 	err = Driver.SetTestStateTo(id, "spawned")
 	if err != nil {
 		return err
 	}
 	// update the heartbeat ts
+	log.Printf("updating heartbeat timestamp")
 	err = database.UpdateUpdatedAt(id, Driver)
 	if err != nil {
 		return err
 	}
+	log.Printf("declaring finish states")
 	// declare the states the spawner considers finished
 	finishStates := []string{"pass", "fail", "requested"}
 	finished := false
 
 	// define how often we check the test state
+	log.Printf("defining heartbeat duration")
 	heartbeatDuration := time.Second * 5
+	log.Printf("duration: %v", heartbeatDuration)
 	// wait for either the qemu process to die or the test to finish
-	for !vmProcess.ProcessState.Exited() || finished {
+
+	c := make(chan os.Signal)
+	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
+
+	go func() {
+		<-c
+		syscall.Kill(vmProcess.Process.Pid, syscall.SIGKILL)
+		os.Exit(1)
+	}()
+
+	defer syscall.Kill(vmProcess.Process.Pid, syscall.SIGKILL)
+
+	go vmProcess.Wait()
+
+	for utils.PidActive(vmProcess.Process.Pid) || finished {
 		// get the test state
+		log.Printf("getting test state...")
 		state, err := GetTestState(id, Driver)
 		if err != nil {
 			return err
 		}
+		log.Printf("got test state: %v", state)
 		// see if it's in a "finished" state
 		if slices.Contains(finishStates, state) {
+			log.Printf("job finished!")
 			finished = true
 		}
 		// Only update the heartbeat timestamp
 		// when the runner is not already running the test
 		if state != "running" {
 			// update the heartbeat ts
+			log.Printf("updating heartbeat timestamp")
 			err = database.UpdateUpdatedAt(id, Driver)
 			if err != nil {
 				return err
@@ -346,14 +441,17 @@ func SpawnerLoop(Driver database.DbDriver, SpawnerCfg GutsSpawnerConfig) error {
 	}
 	if !finished {
 		// we reach this if the VM dies unexpectedly, set the state back to requested
+		log.Printf("setting state back to 'requested'")
 		err = Driver.SetTestStateTo(id, "requested")
 		return err
 	}
 	// kill the VM
+	log.Printf("killing vm")
 	err = vmProcess.Process.Kill()
 	if err != nil {
 		return err
 	}
+	log.Printf("spawner loop over")
 	// remove the disk
 	err = os.Remove(DiskPath)
 	return err

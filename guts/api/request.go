@@ -7,6 +7,7 @@ import (
 	"github.com/google/uuid"
 	"guts.ubuntu.com/v2/database"
 	"guts.ubuntu.com/v2/utils"
+	"log"
 	"net/http"
 	"os"
 	"os/exec"
@@ -49,28 +50,39 @@ func ParseJobFromJson(jsonData []byte) (JobRequest, error) {
 
 // Don't need to test this directly, it's tested by api_test.go
 func ProcessJobRequest(cfgPath, apiKey string, jobReq JobRequest, driver database.DbDriver) (string, error) { // coverage-ignore
+	log.Printf("Processing job request %v", jobReq)
 	if apiKey == "" {
 		return "", EmptyApiKeyError{}
 	}
+	log.Printf("given api key: %v", apiKey)
 	shakey := utils.Sha256sumOfString(apiKey)
+	log.Printf("shakey: %v", shakey)
 	userData, jobReq, err := AuthorizeUserAndAssignPriority(shakey, jobReq, driver)
 	if err != nil {
 		return "", ApiKeyNotAcceptedError{}
 	}
-	if err = ValidateArtifactUrl(*jobReq.ArtifactUrl, cfgPath); err != nil {
-		return "", err
+	log.Printf("Parsed user data: %v", userData)
+	if jobReq.ArtifactUrl != nil {
+		if err = ValidateArtifactUrl(*jobReq.ArtifactUrl, cfgPath); err != nil {
+			return "", err
+		}
 	}
+	log.Printf("Validated artifact url")
 	if err = ValidateTestbedUrl(jobReq.TestBed, cfgPath); err != nil {
 		return "", err
 	}
+	log.Printf("Validated testbed url")
 	if err = ValidateTestData(jobReq.TestsRepoBranch, jobReq.TestsRepo, jobReq.TestsPlans); err != nil {
 		return "", err
 	}
 	jobRow := CreateJobEntry(jobReq, userData)
+	log.Printf("Writing the following row to the jobs table:\n%v", jobRow)
 	if err = WriteJobEntryToDb(jobRow, driver); err != nil { // coverage-ignore
 		return "", err
 	}
+	log.Printf("Written to db!")
 	returnJson := fmt.Sprintf(`{"uuid": "%v", "status_url": "%v"}`, jobRow.Uuid, GetStatusUrlForUuid(jobRow.Uuid, cfgPath))
+	log.Printf("Returning the following json:\n%v", returnJson)
 	return returnJson, nil
 }
 
@@ -235,7 +247,12 @@ func CreateJobEntry(job JobRequest, uData UserData) JobEntry { // coverage-ignor
 	thisJob.ArtifactUrl = job.ArtifactUrl
 	thisJob.TestsRepo = job.TestsRepo
 	thisJob.TestsRepoBranch = job.TestsRepoBranch
+	// parsing here?
 	thisJob.TestsPlans = job.TestsPlans
+	// thisJob.TestsPlans = make([]string, len(job.TestsPlans))
+	// for idx, entry := range job.TestsPlans {
+	//   thisJob.TestsPlans[idx] = strings.Replace(entry, "/", `%2F`, -1)
+	// }
 	thisJob.ImageUrl = job.TestBed
 	thisJob.Reporter = job.Reporter
 	thisJob.Status = "pending"
@@ -243,6 +260,7 @@ func CreateJobEntry(job JobRequest, uData UserData) JobEntry { // coverage-ignor
 	thisJob.Requester = uData.Username
 	thisJob.Debug = job.Debug
 	thisJob.Priority = job.Priority
+	log.Printf("Created job entry:\n%v\n", thisJob)
 	return thisJob
 }
 
@@ -254,9 +272,11 @@ func WriteJobEntryToDb(job JobEntry, driver database.DbDriver) error {
 // We don't test this function because it's only used for unit tests
 func MakeDummyJobReq() JobRequest { // coverage-ignore
 	var expectedJobReq JobRequest
-	url := "myurl"
+	// url := "hello"
+	url := "http://launchpadlibrarian.net/645904366/hello_2.10-3_amd64.deb"
 	expectedJobReq.ArtifactUrl = &url
-	expectedJobReq.TestsRepo = "myrepo"
+	// expectedJobReq.TestsRepo = "myrepo"
+	expectedJobReq.TestsRepo = "https://github.com/canonical/ubuntu-gui-testing.git"
 	expectedJobReq.TestsRepoBranch = "main"
 	expectedJobReq.TestsPlans = []string{"plan1", "plan2"}
 	expectedJobReq.TestBed = "mytestbedurl"

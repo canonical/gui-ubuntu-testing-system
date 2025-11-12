@@ -148,6 +148,8 @@ func (p PgOperationInterface) InterfaceQueryRow(table, queryField, queryValue st
 }
 
 func (p PgOperationInterface) InterfaceQuery(table, queryField, queryValue string, fields []string) (*sql.Rows, error) { // coverage-ignore
+	//////////
+	// What happening?
 	var rows *sql.Rows
 	queryString := fmt.Sprintf("SELECT %v FROM %v WHERE %v=$1", strings.Join(fields, ", "), table, queryField)
 	log.Printf("running query %v with query parameter %v\n", queryString, queryValue)
@@ -156,8 +158,12 @@ func (p PgOperationInterface) InterfaceQuery(table, queryField, queryValue strin
 		return rows, err
 	}
 	defer utils.DeferredErrCheck(stmt.Close)
+	log.Printf("Statement prepared")
+	log.Printf("%v", stmt)
 	rows, err = stmt.Query(queryValue)
 	if err != nil { // coverage-ignore
+		log.Printf("Are we failing here?")
+		log.Printf(err.Error())
 		return rows, err
 	}
 	return rows, nil
@@ -191,14 +197,22 @@ func (p PgOperationInterface) InterfaceRunRowUpdate(query string) error {
 
 func (p PgOperationInterface) UpdateUpdatedAt(id int) error {
 	ts := time.Now()
+	log.Printf("updating heartbeat timestamp with %v", ts)
+
 	updateCmd := `UPDATE tests SET updated_at=$1 WHERE id=$2`
+	log.Printf("running query: %v", updateCmd)
 	stmt, err := p.Db.Prepare(updateCmd)
 	if err != nil { // coverage-ignore
+		log.Printf(err.Error())
 		return err
 	}
 	defer utils.DeferredErrCheck(stmt.Close)
 	_, err = stmt.Exec(ts, id)
-	return err
+	if err != nil {
+		log.Printf(err.Error())
+		return err
+	}
+	return nil
 }
 
 func (p PgOperationInterface) DeleteUuidFromTable(uuid, table string) error {

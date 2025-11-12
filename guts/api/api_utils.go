@@ -2,8 +2,10 @@ package api
 
 import (
 	"fmt"
+	"github.com/lib/pq"
 	"guts.ubuntu.com/v2/database"
 	"guts.ubuntu.com/v2/utils"
+	"log"
 	"reflect"
 	"strings"
 )
@@ -13,27 +15,48 @@ func GetStatusUrlForUuid(uuid, cfgPath string) string {
 	if err != nil { // coverage-ignore
 		return ""
 	}
-	statusUrl := fmt.Sprintf("%v%v/status/%v", utils.GetProtocolPrefix(gutsCfg.Api.Port), gutsCfg.Api.Hostname, uuid)
+	hostname := gutsCfg.Api.Hostname
+	if hostname == "localhost" {
+		hostname = fmt.Sprintf("%v:%v", hostname, gutsCfg.Api.Port)
+	}
+	statusUrl := fmt.Sprintf("%v%v/job/%v", utils.GetProtocolPrefix(gutsCfg.Api.Port), hostname, uuid)
 	return statusUrl
 }
 
 func InsertJobsRow(job JobEntry, driver database.DbDriver) error {
-	allJobColumns := []string{"uuid", "artifact_url", "tests_repo", "tests_repo_branch", "tests_plans", "image_url", "reporter", "status", "submitted_at", "requester", "debug", "priority"}
+	log.Printf("%v\n", job)
+	allJobColumns := []string{
+		"uuid",
+		"artifact_url",
+		"tests_repo",
+		"tests_repo_branch",
+		"tests_plans",
+		"image_url",
+		"reporter",
+		"status",
+		"submitted_at",
+		"requester",
+		"debug",
+		"priority",
+	}
 	queryString := fmt.Sprintf(
 		`INSERT INTO jobs (%v) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)`,
 		strings.Join(allJobColumns, ", "),
 	)
 	stmt, err := driver.PrepareQuery(queryString)
+	log.Printf("Statement:\n%v", stmt)
 	if err != nil { // coverage-ignore
+		log.Printf("failed to prepare query:\n%v\nwith:\n%v", queryString, err.Error())
 		return err
 	}
 	defer utils.DeferredErrCheck(stmt.Close)
+
 	_, err = stmt.Exec(
 		job.Uuid,
 		job.ArtifactUrl,
 		job.TestsRepo,
 		job.TestsRepoBranch,
-		fmt.Sprintf(`{%v}`, strings.Join(job.TestsPlans, ",")),
+		pq.Array(job.TestsPlans),
 		job.ImageUrl,
 		job.Reporter,
 		job.Status,
@@ -42,6 +65,9 @@ func InsertJobsRow(job JobEntry, driver database.DbDriver) error {
 		job.Debug,
 		job.Priority,
 	)
+	if err != nil { // coverage-ignore
+		log.Printf("failed to execute statement %v", stmt)
+	}
 	return err
 }
 

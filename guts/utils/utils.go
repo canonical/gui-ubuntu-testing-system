@@ -10,7 +10,7 @@ import (
 	"fmt"
 	"gopkg.in/yaml.v3"
 	"io"
-	// "log"
+	"log"
 	"net"
 	"net/http"
 	"net/url"
@@ -19,6 +19,7 @@ import (
 	"path/filepath"
 	"regexp"
 	"strings"
+	"syscall"
 	"time"
 )
 
@@ -71,6 +72,25 @@ func DeferredErrCheck(f func() error) { // coverage-ignore
 func DeferredErrCheckStringArg(f func(s string) error, s string) { // coverage-ignore
 	err := f(s)
 	CheckError(err)
+}
+
+func PidActive(pid int) bool { // coverage-ignore
+	p, err := os.FindProcess(pid)
+	log.Printf("checking status of pid %v", pid)
+	if err != nil {
+		log.Printf(err.Error())
+		return false
+	}
+	log.Printf("found process: %v", p)
+	// process exists, need to check if it is active
+	err = p.Signal(syscall.Signal(0))
+	if err != nil {
+		log.Printf("========================================")
+		log.Printf("looks like process is dead!")
+		log.Printf(err.Error())
+		return false
+	}
+	return true
 }
 
 func ValidateUuid(Uuid string) error {
@@ -350,7 +370,11 @@ func StartProcess(processArgs []string, envVars *[]string) (*exec.Cmd, error) {
 			cmd.Env = append(cmd.Env, entry)
 		}
 	}
+	log.Printf("running command:\n%v", cmd)
 	err := cmd.Start()
+	if err != nil {
+		log.Printf(err.Error())
+	}
 	return cmd, err
 }
 

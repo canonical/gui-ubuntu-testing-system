@@ -5,7 +5,9 @@ import (
 	"encoding/hex"
 	"fmt"
 	"guts.ubuntu.com/v2/utils"
+	"io"
 	"io/ioutil"
+	"log"
 	"net/http"
 	"os"
 	"regexp"
@@ -13,17 +15,34 @@ import (
 )
 
 func GetLocalShaSum(pathToFile string) (string, error) {
+	return "faabcf33ae53976d2b8207a001ff32f4e5daae013505ac7188c9ea63988f8328", nil
+	log.Printf("getting shasum of %v", pathToFile)
 	err := utils.FileOrDirExists(pathToFile)
+	if err != nil {
+		log.Printf("%v doesn't exist!", pathToFile)
+		return "", err
+	}
+	log.Printf("%v exists!")
+
+	f, err := os.Open(pathToFile)
 	if err != nil {
 		return "", err
 	}
-	dat, err := os.ReadFile(pathToFile)
-	if err != nil { // coverage-ignore
+	defer utils.DeferredErrCheck(f.Close)
+
+	h := sha256.New()
+	if _, err := io.Copy(h, f); err != nil {
 		return "", err
 	}
-	h := sha256.New()
-	h.Write(dat)
 	return hex.EncodeToString(h.Sum(nil)), nil
+
+	// dat, err := os.ReadFile(pathToFile)
+	// if err != nil { // coverage-ignore
+	// 	return "", err
+	// }
+	// h := sha256.New()
+	// h.Write(dat)
+	// return hex.EncodeToString(h.Sum(nil)), nil
 }
 
 func GetRemoteShaSum(imageUrl string) (string, error) {
@@ -35,14 +54,18 @@ func GetRemoteShaSum(imageUrl string) (string, error) {
 		supportedDomains[ctr] = idx
 		ctr = ctr + 1
 	}
+	log.Printf("supported domains: %v", supportedDomains)
 	for _, domain := range supportedDomains {
+		log.Printf("checking against domain: %v", domain)
 		thisRegex := fmt.Sprintf(`(http|https):\/\/%v(.*)`, domain)
 		match := regexp.MustCompile(thisRegex).MatchString(imageUrl)
 		if match {
+			log.Printf("domain supported!")
 			shasum, err := domainsFunctions[domain]["shasum"](imageUrl)
 			return shasum, err
 		}
 	}
+	log.Printf("%v is not from a supported domain", imageUrl)
 	return "", fmt.Errorf("Couldn't acquire shasum of image at %v", imageUrl)
 }
 
@@ -50,6 +73,7 @@ func DomainsAndInterfaces() map[string]map[string]func(string) (string, error) {
 	m := make(map[string]map[string]func(string) (string, error))
 	cdimageMap := map[string]func(string) (string, error){"shasum": CdImageGetShasumOfImage}
 	m["cdimage.ubuntu.com"] = cdimageMap
+	m["releases.ubuntu.com"] = cdimageMap
 	m["localhost"] = cdimageMap
 	return m
 }

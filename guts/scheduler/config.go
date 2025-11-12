@@ -12,7 +12,7 @@ type GutsSchedulerConfig struct {
 		Driver           string `yaml:"driver"`
 		ConnectionString string `yaml:"connection_string"`
 	}
-	TestInactiveResetTime string `yaml:"test_inactive_reset_time"` // like '2 minutes'
+	TestInactiveResetTime string `yaml:"test_inactive_reset_time"` // like '20 minutes'
 	ArtifactRetentionDays int    `yaml:"artifact_retention_days"`
 }
 
