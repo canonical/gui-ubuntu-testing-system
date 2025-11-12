@@ -84,7 +84,9 @@ func PidActive(pid int) bool { // coverage-ignore
   // process exists, need to check if it is active
   err = p.Signal(syscall.SIGCONT)
   if err != nil {
+    log.Printf("========================================")
     log.Printf("looks like process is dead!")
+    log.Printf(err.Error())
     return false
   }
   return true
@@ -368,12 +370,10 @@ func StartProcess(processArgs []string, envVars *[]string) (*exec.Cmd, error) {
 		}
 	}
   log.Printf("running command:\n%v", cmd)
-	// err := cmd.Start()
-	out, err := cmd.CombinedOutput()
+	err := cmd.Start()
   if err != nil {
     log.Printf(err.Error())
   }
-  log.Printf(string(out))
 	return cmd, err
 }
 

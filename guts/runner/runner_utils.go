@@ -283,17 +283,13 @@ func RunnerLoop(Driver database.DbDriver, RunnerCfg GutsRunnerConfig) error { //
 
 	envVars := []string{
 		fmt.Sprintf("VNC_HOST=%v", host),
-		fmt.Sprintf("VNC_PORT=%v", port),
+		fmt.Sprintf("VNC_PORT=%v", port - 5900),
 	}
   log.Printf("running yarf with the following env vars:\n%v", envVars)
 	yarfProcess, err := utils.StartProcess(yarfCmdLine, &envVars)
 	if err != nil {
 		return err
 	}
-
-  // err = yarfProcess.Wait()
-  // log.Println(yarfProcess.Output())
-  // utils.CheckError(err)
 
 	yarfTempFailCode := 999
 	heartbeatDuration := time.Second * 5
