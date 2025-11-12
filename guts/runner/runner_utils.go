@@ -290,6 +290,7 @@ func RunnerLoop(Driver database.DbDriver, RunnerCfg GutsRunnerConfig) error { //
 	}
 
   err = yarfProcess.Wait()
+  log.Printf(yarfProcess.Stdout)
   utils.CheckError(err)
 
 	yarfTempFailCode := 999
