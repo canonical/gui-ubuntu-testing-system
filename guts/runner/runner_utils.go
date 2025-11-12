@@ -183,11 +183,6 @@ func GetYarfCommandLine(TestData TestGitData, rowId int, artifactsDir string, Dr
     testCase,
 	}
 
-  cmdLine = []string{
-    "yarf",
-    "-h",
-  }
-
 	return cmdLine, nil
 }
 
