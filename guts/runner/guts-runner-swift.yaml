@@ -7,4 +7,4 @@ storage:
   swift_tenant: "Default"
 database:
   driver: "postgres"
-  connection_string: "host=localhost port=5432 user=guts_api password=guts_api dbname=guts sslmode=disable"
+  connection_string: "host=localhost port=5432 user=guts_runner password=guts_runner dbname=guts sslmode=disable"
