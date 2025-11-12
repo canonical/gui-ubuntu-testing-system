@@ -11,6 +11,7 @@ import (
 	"os/exec"
   "os/signal"
   "syscall"
+  "strconv"
 	"strings"
 	"time"
 )
@@ -281,9 +282,13 @@ func RunnerLoop(Driver database.DbDriver, RunnerCfg GutsRunnerConfig) error { //
 		return err
 	}
 
+  portInt, err := strconv.Atoi(port)
+  if err != nil {
+    return err
+  }
 	envVars := []string{
 		fmt.Sprintf("VNC_HOST=%v", host),
-		fmt.Sprintf("VNC_PORT=%v", string(int(port) - 5900)),
+		fmt.Sprintf("VNC_PORT=%v", string(portInt - 5900)),
 	}
   log.Printf("running yarf with the following env vars:\n%v", envVars)
 	yarfProcess, err := utils.StartProcess(yarfCmdLine, &envVars)
