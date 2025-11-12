@@ -173,12 +173,12 @@ func GetYarfCommandLine(TestData TestGitData, rowId int, artifactsDir string, Dr
 	cmdLine = []string{
 		"yarf",
 		"--platform=Vnc",
-		entrypoint,
+    fmt.Sprintf("%v/%v", TestData.RepoDir, entrypoint)
 		"--outdir",
 		artifactsDir,
 		"--",
 		"--suite",
-		fmt.Sprintf(`"%v"`, testCase),
+		fmt.Sprintf(`%v`, testCase),
 	}
 	return cmdLine, nil
 }
