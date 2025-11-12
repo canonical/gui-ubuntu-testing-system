@@ -73,6 +73,14 @@ func DeferredErrCheckStringArg(f func(s string) error, s string) { // coverage-i
 	CheckError(err)
 }
 
+func PidActive(pid int) bool { // coverage-ignore
+  _, err := os.FindProcess(pid)
+  if err != nil {
+    return false
+  }
+  return true
+}
+
 func ValidateUuid(Uuid string) error {
 	if regexp.MustCompile(`[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}`).MatchString(Uuid) {
 		return nil

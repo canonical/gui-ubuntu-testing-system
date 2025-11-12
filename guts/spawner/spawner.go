@@ -289,14 +289,6 @@ func GetTestState(id int, Driver database.DbDriver) (string, error) {
 	return state, nil
 }
 
-func PidActive(pid int) bool {
-  _, err := os.FindProcess(pid)
-  if err != nil {
-    return false
-  }
-  return true
-}
-
 func SpawnerLoop(Driver database.DbDriver, SpawnerCfg GutsSpawnerConfig) error { // coverage-ignore
   log.Printf("starting spawner loop...")
 	// Find the requested job with the highest priority
@@ -411,10 +403,6 @@ func SpawnerLoop(Driver database.DbDriver, SpawnerCfg GutsSpawnerConfig) error {
 	heartbeatDuration := time.Second * 5
   log.Printf("duration: %v", heartbeatDuration)
 	// wait for either the qemu process to die or the test to finish
-  log.Printf("vm state:")
-  log.Printf("%v", vmProcess)
-  log.Printf("%v", vmProcess.Process)
-  log.Printf("%v", vmProcess.Process.Pid)
 
   c := make(chan os.Signal)
   signal.Notify(c, os.Interrupt, syscall.SIGTERM)
@@ -426,7 +414,7 @@ func SpawnerLoop(Driver database.DbDriver, SpawnerCfg GutsSpawnerConfig) error {
   }()
 
   defer syscall.Kill(vmProcess.Process.Pid, syscall.SIGKILL)
-	for PidActive(vmProcess.Process.Pid) || finished {
+	for utils.PidActive(vmProcess.Process.Pid) || finished {
 		// get the test state
     log.Printf("getting test state...")
 		state, err := GetTestState(id, Driver)

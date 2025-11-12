@@ -8,6 +8,8 @@ import (
 	"guts.ubuntu.com/v2/utils"
 	"os"
 	"os/exec"
+  "os/signal"
+  "syscall"
 	"strings"
 	"time"
 )
@@ -272,7 +274,18 @@ func RunnerLoop(Driver database.DbDriver, RunnerCfg GutsRunnerConfig) error { //
 	yarfTempFailCode := 999
 	heartbeatDuration := time.Second * 5
 
-	for !yarfProcess.ProcessState.Exited() {
+  c := make(chan os.Signal)
+  signal.Notify(c, os.Interrupt, syscall.SIGTERM)
+
+  go func() {
+      <-c
+      syscall.Kill(yarfProcess.Process.Pid, syscall.SIGKILL)
+      os.Exit(1)
+  }()
+
+  defer syscall.Kill(yarfProcess.Process.Pid, syscall.SIGKILL)
+
+  for utils.PidActive(yarfProcess.Process.Pid) {
 		err = database.UpdateUpdatedAt(rowId, Driver)
 		if err != nil {
 			return err
