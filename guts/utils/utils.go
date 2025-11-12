@@ -373,7 +373,7 @@ func StartProcess(processArgs []string, envVars *[]string) (*exec.Cmd, error) {
   if err != nil {
     log.Printf(err.Error())
   }
-  log.Printf(out)
+  log.Printf(string(out))
 	return cmd, err
 }
 
