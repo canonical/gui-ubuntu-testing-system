@@ -203,14 +203,12 @@ func (p PgOperationInterface) UpdateUpdatedAt(id int) error {
   log.Printf("running query: %v", updateCmd)
 	stmt, err := p.Db.Prepare(updateCmd)
 	if err != nil { // coverage-ignore
-    log.Printf("failed here 1")
     log.Printf(err.Error())
 		return err
 	}
 	defer utils.DeferredErrCheck(stmt.Close)
 	_, err = stmt.Exec(ts, id)
   if err != nil {
-    log.Printf("failed here 2")
     log.Printf(err.Error())
     return err
   }
