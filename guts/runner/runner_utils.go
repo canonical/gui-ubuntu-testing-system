@@ -170,22 +170,17 @@ func GetYarfCommandLine(TestData TestGitData, rowId int, artifactsDir string, Dr
 		return cmdLine, fmt.Errorf("couldn't parse test entrypoint for test %v and plan %v", testCase, testPlan)
 	}
 
-  // actual command line
-	// cmdLine = []string{
-	// 	"yarf",
-	// 	"--platform=Vnc",
-  //   fmt.Sprintf("%v/%v", TestData.RepoDir, entrypoint),
-	// 	"--outdir",
-	// 	artifactsDir,
-	// 	"--",
-	// 	"--suite",
-  //   testCase,
-	// }
-
-  cmdLine = []string{
-    "yarf",
-    "-h",
-  }
+  // path to yarf isn't the problem...
+	cmdLine = []string{
+		"yarf",
+		"--platform=Vnc",
+    fmt.Sprintf("%v/%v", TestData.RepoDir, entrypoint),
+		"--outdir",
+		artifactsDir,
+		"--",
+		"--suite",
+    testCase,
+	}
 
 	return cmdLine, nil
 }
@@ -297,6 +292,7 @@ func RunnerLoop(Driver database.DbDriver, RunnerCfg GutsRunnerConfig) error { //
 	}
 
   err = yarfProcess.Wait()
+  log.Println(yarfProcess.Output())
   utils.CheckError(err)
 
 	yarfTempFailCode := 999
