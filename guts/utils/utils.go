@@ -10,7 +10,7 @@ import (
 	"fmt"
 	"gopkg.in/yaml.v3"
 	"io"
-	// "log"
+	"log"
 	"net"
 	"net/http"
 	"net/url"
@@ -75,7 +75,9 @@ func DeferredErrCheckStringArg(f func(s string) error, s string) { // coverage-i
 
 func PidActive(pid int) bool { // coverage-ignore
   _, err := os.FindProcess(pid)
+  log.Printf("checking status of pid %v", pid)
   if err != nil {
+    log.Printf(err.Error())
     return false
   }
   return true
