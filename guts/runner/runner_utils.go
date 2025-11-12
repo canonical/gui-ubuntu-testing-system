@@ -222,6 +222,15 @@ func GetHostAndPort(id int, Driver database.DbDriver) (string, string, error) {
 	return splitAddr[0], splitAddr[1], nil
 }
 
+func Heartbeat(rowId int, Driver database.DbDriver, heartbeatDuration, time.Duration) {
+  err = database.UpdateUpdatedAt(rowId, Driver)
+  if err != nil {
+    return err
+  }
+  time.Sleep(heartbeatDuration)
+}
+
+
 // don't bother testing the main loop, that's for integration testing
 func RunnerLoop(Driver database.DbDriver, RunnerCfg GutsRunnerConfig) error { // coverage-ignore
 	// ensure we have a functional storage backend
@@ -318,6 +327,8 @@ func RunnerLoop(Driver database.DbDriver, RunnerCfg GutsRunnerConfig) error { //
   }()
 
   defer syscall.Kill(yarfProcess.Process.Pid, syscall.SIGKILL)
+
+  go yarfProcess.Wait()
 
   for utils.PidActive(yarfProcess.Process.Pid) {
 		err = database.UpdateUpdatedAt(rowId, Driver)
