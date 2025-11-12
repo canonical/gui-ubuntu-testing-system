@@ -7,6 +7,7 @@ import (
 	"guts.ubuntu.com/v2/storage"
 	"guts.ubuntu.com/v2/utils"
 	"os"
+  "log"
 	"os/exec"
   "os/signal"
   "syscall"
@@ -226,6 +227,8 @@ func RunnerLoop(Driver database.DbDriver, RunnerCfg GutsRunnerConfig) error { //
 	if err != nil {
 		return err
 	}
+
+  log.Printf("found row with row id %v and uuid %v ready for test run", rowId, Uuid)
 
 	// - set state to `running`
 	err = Driver.SetTestStateTo(rowId, "running")
